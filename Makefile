@@ -5,7 +5,7 @@ export PATH := $(PATH):$(GOPATH)
 BIN_DIR = bin
 PB_DIR = gen/pb
 
-all: clean generate test build
+all: clean generate tidy test build
 
 build:
 	go build -o $(BIN_DIR)/ -v ./...
