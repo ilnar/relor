@@ -1,6 +1,11 @@
-BIN_DIR = bin
+GOPATH := $(shell go env GOPATH)/bin
 
-all: test build
+export PATH := $(PATH):$(GOPATH)
+
+BIN_DIR = bin
+PB_DIR = gen/pb
+
+all: clean generate test build
 
 build:
 	go build -o $(BIN_DIR)/ -v ./...
@@ -11,10 +16,16 @@ test:
 clean:
 	go clean
 	rm -rf $(BIN_DIR)
+	rm -rf $(PB_DIR)/*
 
 tidy:
 	go mod tidy
 	go mod vendor
 	go vet ./...
 
-.PHONY: all build test clean tidy
+generate:
+	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
+		api/*.proto
+
+.PHONY: all build test clean tidy generate

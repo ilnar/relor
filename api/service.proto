@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package service;
+option go_package="github.com/ilnar/wf/gen/pb/api";
+
+message GetRequest {
+    string id = 1;
+}
+
+message GetResponse {
+    // Add your response fields here
+}
+
+service WorkflowService {
+    rpc Get(GetRequest) returns (GetResponse);
+}

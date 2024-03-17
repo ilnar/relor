@@ -9,6 +9,8 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+
+	pb "github.com/ilnar/wf/gen/pb/api"
 )
 
 type Logger interface {
@@ -44,6 +46,8 @@ func (s Server) Serve(ctx context.Context) error {
 
 	gs := grpc.NewServer()
 	defer gs.GracefulStop()
+
+	pb.RegisterWorkflowServiceServer(gs, nil)
 
 	stopChan := make(chan os.Signal, 1)
 	s.notify(stopChan, syscall.SIGTERM, syscall.SIGINT)
