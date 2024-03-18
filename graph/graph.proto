@@ -22,17 +22,19 @@ message Action {
 }
 
 message Node {
-    string uid = 1;
-    optional Action action = 2;
+    string id = 1;
+    string name = 2;
+    optional Action action = 3;
 }
 
 message Edge {
-    string from_uid = 1;
-    string to_uid = 2;
+    string from_id = 1;
+    string to_id = 2;
     TransitionCondition condition = 3;
 }
 
 message Graph {
-    repeated Node nodes = 1;
-    repeated Edge edges = 2;
+    string start = 1;
+    repeated Node nodes = 2;
+    repeated Edge edges = 3;
 }

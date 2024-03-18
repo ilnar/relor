@@ -5,14 +5,28 @@ option go_package="github.com/ilnar/wf/gen/pb/api";
 
 import "graph/graph.proto";
 
+message WorkflowState {
+    string status = 1;
+    string current_node = 2;
+}
+
+message RunRequest {
+    string id = 1;
+    graph.Graph graph = 2;
+}
+
+message RunResponse {
+}
+
 message GetRequest {
     string id = 1;
 }
 
 message GetResponse {
-    graph.Graph graph = 1;
+    WorkflowState state = 1;
 }
 
 service WorkflowService {
-    rpc Get(GetRequest) returns (GetResponse);
+    rpc Run(RunRequest) returns (RunResponse) {};
+    rpc Get(GetRequest) returns (GetResponse) {};
 }

@@ -14,7 +14,7 @@ func main() {
 
 	port := 50051
 	logger := slog.Default()
-	wfs := &workflow.Server{}
+	wfs := workflow.New(logger)
 
 	srv := server.New(port, logger, wfs)
 	if err := srv.Serve(ctx); err != nil {
