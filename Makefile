@@ -26,6 +26,9 @@ tidy:
 generate:
 	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
+		graph/*.proto
+	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
 
 .PHONY: all build test clean tidy generate

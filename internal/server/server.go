@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	pb "github.com/ilnar/wf/gen/pb/api"
 )
@@ -24,18 +25,20 @@ type Server struct {
 	logger Logger
 	port   int
 	notify Notify
+	wfs    pb.WorkflowServiceServer
 }
 
-func New(port int, logger Logger) *Server {
+func New(port int, logger Logger, wfs pb.WorkflowServiceServer) *Server {
 	return &Server{
 		logger: logger,
 		port:   port,
 		notify: signal.Notify,
+		wfs:    wfs,
 	}
 }
 
 func (s Server) Serve(ctx context.Context) error {
-	s.logger.InfoContext(ctx, "Starting server")
+	s.logger.InfoContext(ctx, "Starting server", "port", s.port)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	if err != nil {
@@ -47,7 +50,8 @@ func (s Server) Serve(ctx context.Context) error {
 	gs := grpc.NewServer()
 	defer gs.GracefulStop()
 
-	pb.RegisterWorkflowServiceServer(gs, nil)
+	pb.RegisterWorkflowServiceServer(gs, s.wfs)
+	reflection.Register(gs)
 
 	stopChan := make(chan os.Signal, 1)
 	s.notify(stopChan, syscall.SIGTERM, syscall.SIGINT)

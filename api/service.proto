@@ -1,14 +1,16 @@
 syntax = "proto3";
 
-package service;
+package api;
 option go_package="github.com/ilnar/wf/gen/pb/api";
+
+import "graph/graph.proto";
 
 message GetRequest {
     string id = 1;
 }
 
 message GetResponse {
-    // Add your response fields here
+    graph.Graph graph = 1;
 }
 
 service WorkflowService {

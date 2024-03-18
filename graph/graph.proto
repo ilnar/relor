@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package graph;
+option go_package="github.com/ilnar/wf/gen/pb/graph";
+
+import "google/protobuf/duration.proto";
+
+enum ActionResult {
+    INVALID = 0;
+    ERROR = 1;
+    SUCCESS = 2;
+}
+
+message TransitionCondition {
+    optional ActionResult result = 1;
+}
+
+message Action {
+    string addr = 1;
+    string name = 2;
+    google.protobuf.Duration timeout = 3;
+}
+
+message Node {
+    string uid = 1;
+    optional Action action = 2;
+}
+
+message Edge {
+    string from_uid = 1;
+    string to_uid = 2;
+    TransitionCondition condition = 3;
+}
+
+message Graph {
+    repeated Node nodes = 1;
+    repeated Edge edges = 2;
+}
