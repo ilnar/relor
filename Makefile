@@ -31,4 +31,19 @@ generate:
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
 
-.PHONY: all build test clean tidy generate
+postgres:
+	docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine
+
+createdb:
+	docker exec -it postgres16 createdb --username=root --owner=root workflow
+
+dropdb:
+	docker exec -it postgres16 dropdb workflow
+
+migrateup:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose up
+
+migratedown:
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose down
+
+.PHONY: all build test clean tidy generate postgres createdb dropdb migrateup migratedown
