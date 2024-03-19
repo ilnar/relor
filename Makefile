@@ -5,15 +5,39 @@ export PATH := $(PATH):$(GOPATH)
 BIN_DIR = bin
 PB_DIR = gen/pb
 
-all: clean generate tidy test build
+DB = postgres16
+
+all: clean initpg migrateup generate tidy test build 
 
 build:
 	go build -o $(BIN_DIR)/ -v ./...
+
+initpg:
+	docker run --name $(DB) -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16-alpine
+	sleep 5
+	docker exec -it postgres16 createdb --username=root --owner=root workflow
+	docker stop $(DB)
+
+postgres:
+	docker start $(DB)
+
+migrateup:
+	docker start $(DB)
+	sleep 2
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose up
+	docker stop $(DB)
+
+migratedown:
+	docker start $(DB)
+	sleep 2
+	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose down
+	docker stop $(DB)
 
 test:
 	go test -v ./...
 
 clean:
+	docker rm -fv $(DB)
 	go clean
 	rm -rf $(BIN_DIR)
 	rm -rf $(PB_DIR)/*
@@ -31,19 +55,4 @@ generate:
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
 
-postgres:
-	docker run --name postgres16 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine
-
-createdb:
-	docker exec -it postgres16 createdb --username=root --owner=root workflow
-
-dropdb:
-	docker exec -it postgres16 dropdb workflow
-
-migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose up
-
-migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose down
-
-.PHONY: all build test clean tidy generate postgres createdb dropdb migrateup migratedown
+.PHONY: all build test clean tidy generate initpg migrateup migratedown postgres
