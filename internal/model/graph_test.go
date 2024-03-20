@@ -41,6 +41,13 @@ func TestLoadGraphFromProtoWideGraph(t *testing.T) {
 			t.Errorf("unexpected next node: %s; want %s", n, wantNodes[i])
 		}
 	}
+	gotNodes, err = g.NextNodeIDs("b")
+	if err != nil {
+		t.Fatalf("failed to get next nodes: %v", err)
+	}
+	if len(gotNodes) != 0 {
+		t.Errorf("unexpected next node count: %d; want 0", len(gotNodes))
+	}
 }
 
 func TestLoadGraphFromProtoLongGraph(t *testing.T) {
@@ -87,6 +94,14 @@ func TestLoadGraphFromProtoLongGraph(t *testing.T) {
 	}
 	if gotNodes[0] != "c" {
 		t.Errorf("unexpected next node: %s; want c", gotNodes[0])
+	}
+
+	gotNodes, err = g.NextNodeIDs("e")
+	if err != nil {
+		t.Fatalf("failed to get next nodes: %v", err)
+	}
+	if len(gotNodes) != 0 {
+		t.Errorf("unexpected next node count: %d; want 0", len(gotNodes))
 	}
 }
 
