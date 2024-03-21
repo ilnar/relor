@@ -8,7 +8,7 @@ SQLC_DIR = gen/sqlc
 
 DB = postgres16
 
-all: clean initpg migrateup generate tidy test build 
+all: clean generate tidy test build 
 
 build:
 	go build -o $(BIN_DIR)/ -v ./...
@@ -58,6 +58,6 @@ generate: sqlc
 		api/*.proto
 
 sqlc:
-	sqlc generate
+	pushd db && sqlc generate
 
 .PHONY: all build test clean tidy generate initpg migrateup migratedown postgres sqlc
