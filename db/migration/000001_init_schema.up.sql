@@ -1,5 +1,5 @@
 CREATE TABLE "workflows" (
-  "id" uuid PRIMARY KEY,
+  "id" uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   "current_node" varchar NOT NULL,
   "status" varchar NOT NULL,
   "graph" jsonb NOT NULL,

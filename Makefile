@@ -4,6 +4,7 @@ export PATH := $(PATH):$(GOPATH)
 
 BIN_DIR = bin
 PB_DIR = gen/pb
+SQLC_DIR = gen/sqlc
 
 DB = postgres16
 
@@ -41,13 +42,14 @@ clean:
 	go clean
 	rm -rf $(BIN_DIR)
 	rm -rf $(PB_DIR)/*
+	rm -rf $(SQLC_DIR)
 
 tidy:
 	go mod tidy
 	go mod vendor
 	go vet ./...
 
-generate:
+generate: sqlc
 	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		graph/*.proto
@@ -55,4 +57,7 @@ generate:
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
 
-.PHONY: all build test clean tidy generate initpg migrateup migratedown postgres
+sqlc:
+	sqlc generate
+
+.PHONY: all build test clean tidy generate initpg migrateup migratedown postgres sqlc
