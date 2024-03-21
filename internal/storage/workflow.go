@@ -18,7 +18,7 @@ func New(q *sqlc.Queries) *Storage {
 }
 
 // CreateWorkflow creates a new workflow
-func (s *Storage) CreateWorkflow(ctx context.Context, w model.Workflow) error {
+func (s *Storage) CreateWorkflow(ctx context.Context, w *model.Workflow) error {
 	gpb, err := w.Graph.ToProto()
 	if err != nil {
 		return fmt.Errorf("failed to convert graph to proto: %w", err)
@@ -28,6 +28,7 @@ func (s *Storage) CreateWorkflow(ctx context.Context, w model.Workflow) error {
 		return fmt.Errorf("failed to marshal graph to json: %w", err)
 	}
 	arg := sqlc.CreateWorkflowParams{
+		ID:          w.ID,
 		CurrentNode: w.CurrentNode,
 		Status:      string(w.Status),
 		Graph:       b,

@@ -42,7 +42,7 @@ func (s *Server) Run(ctx context.Context, in *pb.RunRequest) (*pb.RunResponse, e
 	}
 	w := model.NewWorkflow(id, &g)
 	s.logger.InfoContext(ctx, "Running workflow", "w", w)
-	if err := s.store.CreateWorkflow(ctx, *w); err != nil {
+	if err := s.store.CreateWorkflow(ctx, w); err != nil {
 		return nil, fmt.Errorf("failed to create workflow: %w", err)
 	}
 	return &pb.RunResponse{}, nil
