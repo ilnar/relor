@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/ilnar/wf/gen/pb/api"
 	"github.com/ilnar/wf/internal/model"
+	"github.com/ilnar/wf/internal/storage"
 )
 
 type Logger interface {
@@ -17,11 +18,13 @@ type Server struct {
 	pb.UnimplementedWorkflowServiceServer
 
 	logger Logger
+	store  *storage.Storage
 }
 
-func New(logger Logger) *Server {
+func New(l Logger, s *storage.Storage) *Server {
 	return &Server{
-		logger: logger,
+		logger: l,
+		store:  s,
 	}
 }
 
@@ -39,6 +42,9 @@ func (s *Server) Run(ctx context.Context, in *pb.RunRequest) (*pb.RunResponse, e
 	}
 	w := model.NewWorkflow(id, &g)
 	s.logger.InfoContext(ctx, "Running workflow", "w", w)
+	if err := s.store.CreateWorkflow(ctx, *w); err != nil {
+		return nil, fmt.Errorf("failed to create workflow: %w", err)
+	}
 	return &pb.RunResponse{}, nil
 }
 

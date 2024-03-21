@@ -4,6 +4,11 @@ github.com/golang/protobuf/proto
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
+# github.com/lib/pq v1.10.9
+## explicit; go 1.13
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
 # golang.org/x/net v0.20.0
 ## explicit; go 1.18
 golang.org/x/net/http/httpguts
