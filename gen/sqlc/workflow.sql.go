@@ -42,13 +42,13 @@ func (q *Queries) CreateWorkflow(ctx context.Context, arg CreateWorkflowParams) 
 	return i, err
 }
 
-const getWorflow = `-- name: GetWorflow :one
+const getWorkflow = `-- name: GetWorkflow :one
 SELECT id, current_node, status, graph, created_at FROM workflows
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetWorflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
-	row := q.db.QueryRowContext(ctx, getWorflow, id)
+func (q *Queries) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
+	row := q.db.QueryRowContext(ctx, getWorkflow, id)
 	var i Workflow
 	err := row.Scan(
 		&i.ID,
