@@ -1,0 +1,13 @@
+version: "2"
+sql:
+- schema: "./migration/"
+  queries: "./query/"
+  engine: "postgresql"
+  gen:
+    go: 
+      package: "sqlc"
+      out: "../gen/sqlc"
+      emit_json_tags: true
+      emit_prepared_queries: false
+      emit_interface: false
+      emit_exact_table_names: false
