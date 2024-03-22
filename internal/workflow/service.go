@@ -18,10 +18,10 @@ type Server struct {
 	pb.UnimplementedWorkflowServiceServer
 
 	logger Logger
-	store  *storage.Storage
+	store  *storage.WorkflowStorage
 }
 
-func New(l Logger, s *storage.Storage) *Server {
+func New(l Logger, s *storage.WorkflowStorage) *Server {
 	return &Server{
 		logger: l,
 		store:  s,
@@ -49,11 +49,21 @@ func (s *Server) Run(ctx context.Context, in *pb.RunRequest) (*pb.RunResponse, e
 }
 
 func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
-	r := &pb.GetResponse{
-		State: &pb.WorkflowState{
-			Status:      string(model.WorkflowStatusPending),
-			CurrentNode: "start",
-		},
+	if in.Id == "" {
+		return nil, fmt.Errorf("id is empty")
 	}
-	return r, nil
+	id, err := uuid.Parse(in.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse id: %w", err)
+	}
+	w, err := s.store.GetWorkflow(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workflow: %w", err)
+	}
+	return &pb.GetResponse{
+		State: &pb.WorkflowState{
+			Status:      string(w.Status),
+			CurrentNode: w.CurrentNode,
+		},
+	}, nil
 }

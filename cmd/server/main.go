@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
-	store := storage.New(sqlc.New(conn))
+	store := storage.NewWorkflowStorage(sqlc.New(conn))
 
 	wfs := workflow.New(logger, store)
 
