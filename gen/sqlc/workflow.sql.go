@@ -14,23 +14,30 @@ import (
 
 const createWorkflow = `-- name: CreateWorkflow :one
 INSERT INTO workflows (
+  id,
   current_node,
   status,
   graph
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
 RETURNING id, current_node, status, graph, created_at
 `
 
 type CreateWorkflowParams struct {
+	ID          uuid.UUID       `json:"id"`
 	CurrentNode string          `json:"current_node"`
 	Status      string          `json:"status"`
 	Graph       json.RawMessage `json:"graph"`
 }
 
 func (q *Queries) CreateWorkflow(ctx context.Context, arg CreateWorkflowParams) (Workflow, error) {
-	row := q.db.QueryRowContext(ctx, createWorkflow, arg.CurrentNode, arg.Status, arg.Graph)
+	row := q.db.QueryRowContext(ctx, createWorkflow,
+		arg.ID,
+		arg.CurrentNode,
+		arg.Status,
+		arg.Graph,
+	)
 	var i Workflow
 	err := row.Scan(
 		&i.ID,

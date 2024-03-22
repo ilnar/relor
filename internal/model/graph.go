@@ -53,6 +53,19 @@ func (g *Graph) FromProto(pb *gpb.Graph) error {
 
 	return nil
 }
+func (g *Graph) ToProto() (*gpb.Graph, error) {
+	if g == nil || g.idx == nil {
+		return nil, fmt.Errorf("graph is not initialized")
+	}
+	pb := &gpb.Graph{Start: g.root.ID}
+	for _, n := range g.idx {
+		pb.Nodes = append(pb.Nodes, &gpb.Node{Id: n.ID, Name: n.Name})
+		for _, e := range n.Out {
+			pb.Edges = append(pb.Edges, &gpb.Edge{FromId: e.From.ID, ToId: e.To.ID})
+		}
+	}
+	return pb, nil
+}
 
 func (g *Graph) NextNodeIDs(id string) ([]string, error) {
 	if g == nil || g.idx == nil {

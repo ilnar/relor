@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	gpb "github.com/ilnar/wf/gen/pb/graph"
 )
@@ -132,5 +133,31 @@ func TestLoadGraphFromProtoUnitialised(t *testing.T) {
 	}
 	if g.Head() != "" {
 		t.Errorf("unexpected head: %s; want empty", g.Head())
+	}
+}
+
+func TestGraphToProto(t *testing.T) {
+	txt := `
+		start: "a"
+		nodes { id: "a" name: "node a" }
+		nodes { id: "b" name: "node b" }
+		nodes { id: "c" name: "node c" }
+		edges { from_id: "a" to_id: "b" }
+		edges { from_id: "a" to_id: "c" }
+	`
+	pb := &gpb.Graph{}
+	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	g := &Graph{}
+	if err := g.FromProto(pb); err != nil {
+		t.Fatalf("failed to load graph: %v", err)
+	}
+	got, err := g.ToProto()
+	if err != nil {
+		t.Fatalf("failed to convert to proto: %v", err)
+	}
+	if !proto.Equal(pb, got) {
+		t.Errorf("unexpected proto: %v; want %v", got, pb)
 	}
 }

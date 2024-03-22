@@ -1,10 +1,11 @@
 -- name: CreateWorkflow :one
 INSERT INTO workflows (
+  id,
   current_node,
   status,
   graph
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
 RETURNING *;
 
