@@ -26,14 +26,16 @@ type Server struct {
 	port   int
 	notify Notify
 	wfs    pb.WorkflowServiceServer
+	js     pb.JobServiceServer
 }
 
-func New(port int, logger Logger, wfs pb.WorkflowServiceServer) *Server {
+func New(port int, logger Logger, wfs pb.WorkflowServiceServer, js pb.JobServiceServer) *Server {
 	return &Server{
 		logger: logger,
 		port:   port,
 		notify: signal.Notify,
 		wfs:    wfs,
+		js:     js,
 	}
 }
 
@@ -51,6 +53,7 @@ func (s Server) Serve(ctx context.Context) error {
 	defer gs.GracefulStop()
 
 	pb.RegisterWorkflowServiceServer(gs, s.wfs)
+	pb.RegisterJobServiceServer(gs, s.js)
 	reflection.Register(gs)
 
 	stopChan := make(chan os.Signal, 1)

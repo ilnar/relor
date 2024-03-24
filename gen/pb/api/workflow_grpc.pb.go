@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.25.3
-// source: api/service.proto
+// source: api/workflow.proto
 
 package api
 
@@ -137,5 +137,5 @@ var WorkflowService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/service.proto",
+	Metadata: "api/workflow.proto",
 }
