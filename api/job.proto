@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package api;
+option go_package="github.com/ilnar/wf/gen/pb/api";
+
+message Reference {
+	string workflow_id = 1;
+	string workflow_action = 2;
+}
+
+message CreateResponse {
+}
+
+message CreateRequest {
+	string id = 1;
+	Reference reference = 2;
+}
+
+message ClaimRequest {
+	string id = 1;
+}
+
+message ClaimResponse {
+	string action_id = 1;
+}
+
+message ReleaseRequest {
+	string id = 1;
+}
+
+message ReleaseResponse {
+}
+
+message CompleteRequest {
+	string id = 1;
+}
+
+message CompleteResponse {
+}
+
+message ListenRequest {
+	string worker_id = 1;
+}
+
+message Job {
+	string id = 1;
+	Reference reference = 2;
+}
+
+service JobService {
+	rpc Create(CreateRequest) returns (CreateResponse) {}
+	rpc Claim(ClaimRequest) returns (ClaimResponse) {}
+	rpc Release(ReleaseRequest) returns (ReleaseResponse) {}
+	rpc Complete(CompleteRequest) returns (CompleteResponse) {}
+	rpc Listen(ListenRequest) returns (stream Job) {}
+}

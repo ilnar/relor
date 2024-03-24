@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ilnar/wf/internal/job"
 	"github.com/ilnar/wf/internal/workflow"
 )
 
@@ -26,7 +27,7 @@ func TestShutdownWithCtxCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	logger := &loggerMock{}
-	srv := New(8080, logger, &workflow.Server{})
+	srv := New(8080, logger, &workflow.Server{}, &job.Server{})
 	go srv.Serve(ctx)
 
 	cancel()
@@ -48,7 +49,7 @@ func TestShutdownWithSignal(t *testing.T) {
 	defer cancel()
 
 	logger := &loggerMock{}
-	srv := New(8080, logger, &workflow.Server{})
+	srv := New(8080, logger, &workflow.Server{}, &job.Server{})
 	srv.notify = func(c chan<- os.Signal, sig ...os.Signal) {
 		c <- syscall.SIGTERM
 	}
@@ -72,7 +73,7 @@ func TestShutdownWithError(t *testing.T) {
 	defer cancel()
 
 	logger := &loggerMock{}
-	srv := New(-8080, logger, &workflow.Server{}) // invalid port
+	srv := New(-8080, logger, &workflow.Server{}, &job.Server{}) // invalid port
 
 	go srv.Serve(ctx)
 
