@@ -19,16 +19,17 @@ type Logger interface {
 type Server struct {
 	pb.UnimplementedJobServiceServer
 
-	logger Logger
-	jobs   *storage.JobStorage
-	jq     chan model.Job
+	logger             Logger
+	jobs               *storage.JobStorage
+	createq, completeq chan model.Job
 }
 
 func New(l Logger, s *storage.JobStorage) *Server {
 	return &Server{
-		logger: l,
-		jobs:   s,
-		jq:     make(chan model.Job, 1000),
+		logger:    l,
+		jobs:      s,
+		createq:   make(chan model.Job, 1000),
+		completeq: make(chan model.Job, 1000),
 	}
 }
 
@@ -63,7 +64,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.CreateRe
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
-	s.jq <- *j
+	s.createq <- *j
 	return &pb.CreateResponse{}, nil
 }
 
@@ -109,6 +110,7 @@ func (s *Server) Release(ctx context.Context, in *pb.ReleaseRequest) (*pb.Releas
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
+	s.completeq <- *j
 	return &pb.ReleaseResponse{}, nil
 }
 
@@ -130,19 +132,33 @@ func (s *Server) Complete(ctx context.Context, in *pb.CompleteRequest) (*pb.Comp
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
-
+	s.completeq <- *j
 	return &pb.CompleteResponse{}, nil
 }
 
 func (s *Server) Listen(in *pb.ListenRequest, stream pb.JobService_ListenServer) error {
-	s.logger.InfoContext(stream.Context(), "Listening for jobs", "worker_id", in.WorkerId)
+	if in.WorkerId == "" {
+		return status.Errorf(codes.InvalidArgument, "worker id is empty")
+	}
+	var q chan model.Job
+	switch in.ListenTo {
+	case pb.ListenOperation_CREATE:
+		q = s.createq
+	case pb.ListenOperation_COMPLETE:
+		q = s.completeq
+	default:
+		return status.Errorf(codes.InvalidArgument, "listen to is invalid")
+	}
+
+	s.logger.InfoContext(stream.Context(), "Listening for jobs", "worker_id", in.WorkerId, "operation", in.ListenTo)
 	for {
 		select {
-		case j := <-s.jq:
+		case j := <-q:
 			s.logger.InfoContext(stream.Context(), "Sending job",
 				"id", j.ID().ID,
 				"workflow_id", j.ID().WorkflowID,
 				"workflow_action", j.ID().WorkflowAction,
+				"operation", in.ListenTo,
 				"worker_id", in.WorkerId,
 			)
 			if err := stream.Send(&pb.Job{
@@ -155,7 +171,7 @@ func (s *Server) Listen(in *pb.ListenRequest, stream pb.JobService_ListenServer)
 				return status.Errorf(codes.Internal, "failed to send job: %v", err)
 			}
 		case <-stream.Context().Done():
-			s.logger.InfoContext(stream.Context(), "Stopped listening for jobs", "worker_id", in.WorkerId)
+			s.logger.InfoContext(stream.Context(), "Stopped listening for jobs", "worker_id", in.WorkerId, "operation", in.ListenTo)
 			return nil
 		}
 	}
