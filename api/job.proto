@@ -38,9 +38,19 @@ message CompleteRequest {
 message CompleteResponse {
 }
 
+message ListenRequest {
+	string worker_id = 1;
+}
+
+message Job {
+	string id = 1;
+	Reference reference = 2;
+}
+
 service JobService {
 	rpc Create(CreateRequest) returns (CreateResponse) {}
 	rpc Claim(ClaimRequest) returns (ClaimResponse) {}
 	rpc Release(ReleaseRequest) returns (ReleaseResponse) {}
 	rpc Complete(CompleteRequest) returns (CompleteResponse) {}
+	rpc Listen(ListenRequest) returns (stream Job) {}
 }

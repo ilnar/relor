@@ -26,6 +26,7 @@ type JobServiceClient interface {
 	Claim(ctx context.Context, in *ClaimRequest, opts ...grpc.CallOption) (*ClaimResponse, error)
 	Release(ctx context.Context, in *ReleaseRequest, opts ...grpc.CallOption) (*ReleaseResponse, error)
 	Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResponse, error)
+	Listen(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (JobService_ListenClient, error)
 }
 
 type jobServiceClient struct {
@@ -72,6 +73,38 @@ func (c *jobServiceClient) Complete(ctx context.Context, in *CompleteRequest, op
 	return out, nil
 }
 
+func (c *jobServiceClient) Listen(ctx context.Context, in *ListenRequest, opts ...grpc.CallOption) (JobService_ListenClient, error) {
+	stream, err := c.cc.NewStream(ctx, &JobService_ServiceDesc.Streams[0], "/api.JobService/Listen", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &jobServiceListenClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type JobService_ListenClient interface {
+	Recv() (*Job, error)
+	grpc.ClientStream
+}
+
+type jobServiceListenClient struct {
+	grpc.ClientStream
+}
+
+func (x *jobServiceListenClient) Recv() (*Job, error) {
+	m := new(Job)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // JobServiceServer is the server API for JobService service.
 // All implementations must embed UnimplementedJobServiceServer
 // for forward compatibility
@@ -80,6 +113,7 @@ type JobServiceServer interface {
 	Claim(context.Context, *ClaimRequest) (*ClaimResponse, error)
 	Release(context.Context, *ReleaseRequest) (*ReleaseResponse, error)
 	Complete(context.Context, *CompleteRequest) (*CompleteResponse, error)
+	Listen(*ListenRequest, JobService_ListenServer) error
 	mustEmbedUnimplementedJobServiceServer()
 }
 
@@ -98,6 +132,9 @@ func (UnimplementedJobServiceServer) Release(context.Context, *ReleaseRequest) (
 }
 func (UnimplementedJobServiceServer) Complete(context.Context, *CompleteRequest) (*CompleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
+}
+func (UnimplementedJobServiceServer) Listen(*ListenRequest, JobService_ListenServer) error {
+	return status.Errorf(codes.Unimplemented, "method Listen not implemented")
 }
 func (UnimplementedJobServiceServer) mustEmbedUnimplementedJobServiceServer() {}
 
@@ -184,6 +221,27 @@ func _JobService_Complete_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _JobService_Listen_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListenRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(JobServiceServer).Listen(m, &jobServiceListenServer{stream})
+}
+
+type JobService_ListenServer interface {
+	Send(*Job) error
+	grpc.ServerStream
+}
+
+type jobServiceListenServer struct {
+	grpc.ServerStream
+}
+
+func (x *jobServiceListenServer) Send(m *Job) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // JobService_ServiceDesc is the grpc.ServiceDesc for JobService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -208,6 +266,12 @@ var JobService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _JobService_Complete_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Listen",
+			Handler:       _JobService_Listen_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/job.proto",
 }

@@ -21,12 +21,14 @@ type Server struct {
 
 	logger Logger
 	jobs   *storage.JobStorage
+	jq     chan model.Job
 }
 
 func New(l Logger, s *storage.JobStorage) *Server {
 	return &Server{
 		logger: l,
 		jobs:   s,
+		jq:     make(chan model.Job, 1000),
 	}
 }
 
@@ -61,6 +63,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.CreateRe
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
+	s.jq <- *j
 	return &pb.CreateResponse{}, nil
 }
 
@@ -129,4 +132,31 @@ func (s *Server) Complete(ctx context.Context, in *pb.CompleteRequest) (*pb.Comp
 	}
 
 	return &pb.CompleteResponse{}, nil
+}
+
+func (s *Server) Listen(in *pb.ListenRequest, stream pb.JobService_ListenServer) error {
+	s.logger.InfoContext(stream.Context(), "Listening for jobs", "worker_id", in.WorkerId)
+	for {
+		select {
+		case j := <-s.jq:
+			s.logger.InfoContext(stream.Context(), "Sending job",
+				"id", j.ID().ID,
+				"workflow_id", j.ID().WorkflowID,
+				"workflow_action", j.ID().WorkflowAction,
+				"worker_id", in.WorkerId,
+			)
+			if err := stream.Send(&pb.Job{
+				Id: j.ID().ID.String(),
+				Reference: &pb.Reference{
+					WorkflowId:     j.ID().WorkflowID.String(),
+					WorkflowAction: j.ID().WorkflowAction,
+				},
+			}); err != nil {
+				return status.Errorf(codes.Internal, "failed to send job: %v", err)
+			}
+		case <-stream.Context().Done():
+			s.logger.InfoContext(stream.Context(), "Stopped listening for jobs", "worker_id", in.WorkerId)
+			return nil
+		}
+	}
 }
