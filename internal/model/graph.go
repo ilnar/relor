@@ -92,6 +92,9 @@ func (g *Graph) Head() string {
 func indexNodes(g *gpb.Graph) (map[string]*Node, error) {
 	i := make(map[string]*Node, len(g.Nodes))
 	for _, n := range g.Nodes {
+		if _, found := i[n.Id]; found {
+			return nil, fmt.Errorf("duplicate node id: %s", n.Id)
+		}
 		i[n.Id] = &Node{ID: n.Id, Name: n.Name}
 	}
 	return i, nil
