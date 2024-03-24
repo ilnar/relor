@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/google/go-cmp/cmp"
 	gpb "github.com/ilnar/wf/gen/pb/graph"
 )
 
@@ -157,7 +158,24 @@ func TestGraphToProto(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert to proto: %v", err)
 	}
-	if !proto.Equal(pb, got) {
-		t.Errorf("unexpected proto: %v; want %v", got, pb)
+	if diff := cmp.Diff(pb, got, protocmp.Transform(), protocmp.SortRepeatedFields(pb, "nodes", "edges")); diff != "" {
+		t.Errorf("unexpected difference: %v", diff)
+	}
+
+}
+
+func TestGraphDuplicateNodes(t *testing.T) {
+	txt := `
+		start: "a"
+		nodes { id: "a" name: "node a" }
+		nodes { id: "a" name: "node a" }
+	`
+	pb := &gpb.Graph{}
+	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	g := &Graph{}
+	if err := g.FromProto(pb); err == nil {
+		t.Fatalf("unexpected success loading graph with duplicate nodes")
 	}
 }
