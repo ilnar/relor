@@ -158,7 +158,7 @@ func TestGraphToProto(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to convert to proto: %v", err)
 	}
-	if diff := cmp.Diff(pb, got, protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(pb, got, protocmp.Transform(), protocmp.SortRepeatedFields(pb, "nodes", "edges")); diff != "" {
 		t.Errorf("unexpected difference: %v", diff)
 	}
 
