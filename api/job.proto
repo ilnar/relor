@@ -38,8 +38,15 @@ message CompleteRequest {
 message CompleteResponse {
 }
 
+enum ListenOperation {
+	UNSPECIFIED = 0;
+	CREATE = 1;
+	COMPLETE = 2;
+}
+
 message ListenRequest {
 	string worker_id = 1;
+	ListenOperation listen_to = 2;
 }
 
 message Job {
