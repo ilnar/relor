@@ -42,6 +42,10 @@ func (f *fakeDBQuery) GetWorkflow(_ context.Context, id uuid.UUID) (sqlc.Workflo
 	return w, nil
 }
 
+func (f *fakeDBQuery) GetNextWorkflows(_ context.Context) ([]sqlc.Workflow, error) {
+	return nil, nil
+}
+
 func TestCreateWorkflow(t *testing.T) {
 	txt := `
 		start: "a"
@@ -59,7 +63,7 @@ func TestCreateWorkflow(t *testing.T) {
 	id := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	ctx := context.Background()
 	ws := NewWorkflowStorage(newFakeDBQuery())
-	want := &model.Workflow{
+	want := model.Workflow{
 		ID:          id,
 		CurrentNode: "a",
 		Status:      model.WorkflowStatusPending,

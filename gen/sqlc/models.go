@@ -12,9 +12,10 @@ import (
 )
 
 type Workflow struct {
-	ID          uuid.UUID       `json:"id"`
-	CurrentNode string          `json:"current_node"`
-	Status      string          `json:"status"`
-	Graph       json.RawMessage `json:"graph"`
-	CreatedAt   time.Time       `json:"created_at"`
+	ID           uuid.UUID       `json:"id"`
+	CurrentNode  string          `json:"current_node"`
+	Status       string          `json:"status"`
+	Graph        json.RawMessage `json:"graph"`
+	CreatedAt    time.Time       `json:"created_at"`
+	NextActionAt time.Time       `json:"next_action_at"`
 }

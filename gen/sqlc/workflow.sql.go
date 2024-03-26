@@ -21,7 +21,7 @@ INSERT INTO workflows (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id, current_node, status, graph, created_at
+RETURNING id, current_node, status, graph, created_at, next_action_at
 `
 
 type CreateWorkflowParams struct {
@@ -45,12 +45,50 @@ func (q *Queries) CreateWorkflow(ctx context.Context, arg CreateWorkflowParams) 
 		&i.Status,
 		&i.Graph,
 		&i.CreatedAt,
+		&i.NextActionAt,
 	)
 	return i, err
 }
 
+const getNextWorkflows = `-- name: GetNextWorkflows :many
+SELECT id, current_node, status, graph, created_at, next_action_at FROM workflows
+WHERE status = 'running'
+  AND next_action_at <= now()
+LIMIT 10
+`
+
+func (q *Queries) GetNextWorkflows(ctx context.Context) ([]Workflow, error) {
+	rows, err := q.db.QueryContext(ctx, getNextWorkflows)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Workflow
+	for rows.Next() {
+		var i Workflow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CurrentNode,
+			&i.Status,
+			&i.Graph,
+			&i.CreatedAt,
+			&i.NextActionAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getWorkflow = `-- name: GetWorkflow :one
-SELECT id, current_node, status, graph, created_at FROM workflows
+SELECT id, current_node, status, graph, created_at, next_action_at FROM workflows
 WHERE id = $1 LIMIT 1
 `
 
@@ -63,6 +101,7 @@ func (q *Queries) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, erro
 		&i.Status,
 		&i.Graph,
 		&i.CreatedAt,
+		&i.NextActionAt,
 	)
 	return i, err
 }
