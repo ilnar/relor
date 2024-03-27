@@ -3,5 +3,6 @@ CREATE TABLE "workflows" (
   "current_node" varchar NOT NULL,
   "status" varchar NOT NULL,
   "graph" jsonb NOT NULL,
-  "created_at" timestamptz NOT NULL DEFAULT (now())
+  "created_at" timestamptz NOT NULL DEFAULT (now()),
+  "next_action_at" timestamptz NOT NULL DEFAULT (now())
 );

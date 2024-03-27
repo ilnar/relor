@@ -7,6 +7,7 @@ import (
 
 	"github.com/ilnar/wf/gen/sqlc"
 	"github.com/ilnar/wf/internal/job"
+	"github.com/ilnar/wf/internal/schedule"
 	"github.com/ilnar/wf/internal/server"
 	"github.com/ilnar/wf/internal/storage"
 	"github.com/ilnar/wf/internal/workflow"
@@ -30,6 +31,9 @@ func main() {
 
 	wfs := workflow.New(logger, wfStore)
 	js := job.New(logger, jobStore)
+
+	sch := schedule.New(wfStore, logger)
+	go sch.Run(ctx)
 
 	port := 50051
 	srv := server.New(port, logger, wfs, js)
