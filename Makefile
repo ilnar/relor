@@ -13,14 +13,17 @@ all: clean generate tidy test build
 build:
 	go build -o $(BIN_DIR)/ -v ./...
 
-initpg:
+initpg: cleanpg
 	docker run --name $(DB) -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16-alpine
 	sleep 5
 	docker exec -it postgres16 createdb --username=root --owner=root workflow
 	docker stop $(DB)
 
-postgres:
+startpg: initpg migrateup
 	docker start $(DB)
+
+cleanpg:
+	docker rm -fv $(DB)
 
 migrateup:
 	docker start $(DB)
@@ -38,7 +41,6 @@ test:
 	go test -v ./...
 
 clean:
-	docker rm -fv $(DB)
 	go clean
 	rm -rf $(BIN_DIR)
 	rm -rf $(PB_DIR)/*
@@ -60,4 +62,5 @@ generate: sqlc
 sqlc:
 	pushd db && sqlc generate
 
-.PHONY: all build test clean tidy generate initpg migrateup migratedown postgres sqlc
+.PHONY: all build test clean tidy generate \
+	initpg startpg cleanpg migrateup migratedown sqlc
