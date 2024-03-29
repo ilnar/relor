@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/ilnar/wf/gen/sqlc"
@@ -60,13 +59,29 @@ func (s *WorkflowStorage) UpdateStatus(ctx context.Context, id uuid.UUID, status
 	return nil
 }
 
-func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, node string, nextActionAt time.Time) error {
+func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, label string) error {
+	wf, err := s.GetWorkflow(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get workflow: %w", err)
+	}
+	nextNode, err := wf.Graph.NextNodeID(wf.CurrentNode, label)
+	if err != nil {
+		return fmt.Errorf("failed to get next node: %w", err)
+	}
 	if _, err := s.q.UpdateWorkflowNextAction(ctx, sqlc.UpdateWorkflowNextActionParams{
-		ID:           id,
-		CurrentNode:  node,
-		NextActionAt: nextActionAt,
+		ID:          id,
+		CurrentNode: nextNode,
 	}); err != nil {
 		return fmt.Errorf("failed to update workflow next action: %w", err)
+	}
+	nextLabels, err := wf.Graph.OutLabels(nextNode)
+	if err != nil {
+		return fmt.Errorf("failed to get out labels: %w", err)
+	}
+	if len(nextLabels) == 0 {
+		if err := s.UpdateStatus(ctx, id, model.WorkflowStatusCompleted); err != nil {
+			return fmt.Errorf("failed to update workflow status: %w", err)
+		}
 	}
 	return nil
 }

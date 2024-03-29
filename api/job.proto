@@ -55,6 +55,8 @@ message ListenRequest {
 message Job {
 	string id = 1;
 	Reference reference = 2;
+	repeated string available_labels = 3;
+	string result_label = 4;
 }
 
 service JobService {

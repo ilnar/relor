@@ -17,7 +17,7 @@ RETURNING *;
 
 -- name: UpdateWorkflowNextAction :one
 UPDATE workflows
-SET next_action_at = $2, current_node = $3
+SET current_node = $2, next_action_at = now() + interval '10 seconds'
 WHERE id = $1
 RETURNING *;
 

@@ -50,7 +50,9 @@ func (s Server) Serve(ctx context.Context) error {
 	defer lis.Close()
 
 	gs := grpc.NewServer()
-	defer gs.GracefulStop()
+	// TODO: Add graceful shutdown.
+	// defer gs.GracefulStop()
+	defer gs.Stop()
 
 	pb.RegisterWorkflowServiceServer(gs, s.wfs)
 	pb.RegisterJobServiceServer(gs, s.js)

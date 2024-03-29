@@ -3,6 +3,7 @@ package schedule
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,15 +22,17 @@ type Logger interface {
 }
 
 type Scheduler struct {
-	wfStore   *storage.WorkflowStorage
-	jobClient pb.JobServiceClient
-	logger    Logger
+	wfStore    *storage.WorkflowStorage
+	jobClient  pb.JobServiceClient
+	logger     Logger
+	workerName string
 }
 
 func New(wfStore *storage.WorkflowStorage, l Logger) *Scheduler {
 	return &Scheduler{
-		wfStore: wfStore,
-		logger:  l,
+		wfStore:    wfStore,
+		logger:     l,
+		workerName: "scheduler-" + uuid.NewString(),
 	}
 }
 
@@ -46,6 +49,41 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	defer conn.Close()
 
 	s.jobClient = pb.NewJobServiceClient(conn)
+
+	listener, err := s.jobClient.Listen(ctx, &pb.ListenRequest{
+		WorkerId: s.workerName,
+		ListenTo: pb.ListenOperation_COMPLETE,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to listen for jobs: %w", err)
+	}
+
+	go func() {
+		for {
+			resp, err := listener.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				s.logger.ErrorContext(ctx, "failed to receive job", "err", err)
+				return
+			}
+			s.logger.InfoContext(ctx, "Received job", "job", resp)
+			if resp.ResultLabel == "" {
+				s.logger.ErrorContext(ctx, "missing result label", "job", resp)
+				continue
+			}
+			wfID, err := uuid.Parse(resp.Reference.WorkflowId)
+			if err != nil {
+				s.logger.ErrorContext(ctx, "failed to parse workflow ID", "err", err)
+				continue
+			}
+			if err := s.wfStore.UpdateNextAction(listener.Context(), wfID, resp.ResultLabel); err != nil {
+				s.logger.ErrorContext(ctx, "failed to update next workflow action", "err", err)
+				continue
+			}
+		}
+	}()
 
 	if err := s.poll(ctx); err != nil {
 		return fmt.Errorf("failed to poll: %w", err)
@@ -79,20 +117,11 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 	if err != nil {
 		return fmt.Errorf("failed to get out labels: %w", err)
 	}
-	// No more actions to take; complete the workflow.
-	if len(labels) == 0 {
-		s.logger.InfoContext(ctx, "Completing workflow", "workflow", w)
-		w.Status = model.WorkflowStatusCompleted
-		if err := s.wfStore.UpdateStatus(ctx, w.ID, model.WorkflowStatusCompleted); err != nil {
-			return fmt.Errorf("failed to update workflow: %w", err)
-		}
-		return nil
-	}
 	// Schedule the next action.
 	jcp := &pb.CreateRequest{
-		Id: w.ID.String(),
+		Id: uuid.NewString(),
 		Reference: &pb.Reference{
-			WorkflowId:     uuid.NewString(),
+			WorkflowId:     w.ID.String(),
 			WorkflowAction: w.CurrentNode,
 		},
 		ResultLabels: labels,
