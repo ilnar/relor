@@ -12,6 +12,7 @@ import (
 	"github.com/ilnar/wf/internal/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 const (
@@ -121,22 +122,7 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 		return fmt.Errorf("failed to get out labels: %w", err)
 	}
 
-	// Schedule the next action.
-	jcp := &pb.CreateRequest{
-		Id: uuid.NewString(),
-		Reference: &pb.Reference{
-			WorkflowId:     w.ID.String(),
-			WorkflowAction: w.CurrentNode,
-		},
-		ResultLabels: labels,
-	}
-	s.logger.InfoContext(ctx, "Scheduling workflow", "request", jcp)
-	_, err = s.jobClient.Create(ctx, jcp)
-	if err != nil {
-		return fmt.Errorf("failed to create job: %w", err)
-	}
-
-	// Set the timeout for this job.
+	// Get the timeout for this job.
 	// When the timeout is reached, a new job for the same action will be created.
 	timeout, err := w.Graph.Timeout(w.CurrentNode)
 	if err != nil {
@@ -148,5 +134,22 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 	if err := s.wfStore.UpdateTimeout(ctx, w.ID, timeout); err != nil {
 		return fmt.Errorf("failed to update timeout: %w", err)
 	}
+
+	// Schedule the next action.
+	jcp := &pb.CreateRequest{
+		Id: uuid.NewString(),
+		Reference: &pb.Reference{
+			WorkflowId:     w.ID.String(),
+			WorkflowAction: w.CurrentNode,
+		},
+		ResultLabels: labels,
+		Ttl:          durationpb.New(timeout),
+	}
+	s.logger.InfoContext(ctx, "Scheduling workflow", "request", jcp)
+	_, err = s.jobClient.Create(ctx, jcp)
+	if err != nil {
+		return fmt.Errorf("failed to create job: %w", err)
+	}
+
 	return nil
 }

@@ -3,6 +3,8 @@ syntax = "proto3";
 package api;
 option go_package="github.com/ilnar/wf/gen/pb/api";
 
+import "google/protobuf/duration.proto";
+
 message Reference {
 	string workflow_id = 1;
 	string workflow_action = 2;
@@ -15,6 +17,7 @@ message CreateRequest {
 	string id = 1;
 	Reference reference = 2;
 	repeated string result_labels = 3;
+	google.protobuf.Duration ttl = 4;
 }
 
 message ClaimRequest {
