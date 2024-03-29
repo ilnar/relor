@@ -46,6 +46,14 @@ func (f *fakeDBQuery) GetNextWorkflows(_ context.Context) ([]sqlc.Workflow, erro
 	return nil, nil
 }
 
+func (f *fakeDBQuery) UpdateWorkflowNextAction(_ context.Context, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error) {
+	return sqlc.Workflow{}, nil
+}
+
+func (f *fakeDBQuery) UpdateWorkflowStatus(_ context.Context, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error) {
+	return sqlc.Workflow{}, nil
+}
+
 func TestCreateWorkflow(t *testing.T) {
 	txt := `
 		start: "a"
