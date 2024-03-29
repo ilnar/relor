@@ -7,6 +7,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	gpb "github.com/ilnar/wf/gen/pb/graph"
 )
 
@@ -202,7 +203,8 @@ func TestGetOutLabels(t *testing.T) {
 		t.Fatalf("failed to get out labels: %v", err)
 	}
 	want := []string{"ok", "not_ok"}
-	if diff := cmp.Diff(want, got); diff != "" {
+	copts := cmpopts.SortSlices(func(a, b string) bool { return a < b })
+	if diff := cmp.Diff(want, got, copts); diff != "" {
 		t.Errorf("unexpected difference: %v", diff)
 	}
 }
