@@ -30,25 +30,21 @@ func TestLoadGraphFromProtoWideGraph(t *testing.T) {
 	if g.Head() != "a" {
 		t.Errorf("unexpected head: %s; want a", g.Head())
 	}
-	gotNodes, err := g.NextNodeIDs("a")
+	got, err := g.NextNodeID("a", "ok")
 	if err != nil {
 		t.Fatalf("failed to get next nodes: %v", err)
 	}
-	wantNodes := []string{"b", "c"}
-	if len(gotNodes) != len(wantNodes) {
-		t.Errorf("unexpected next nodes: %v; want %v", gotNodes, wantNodes)
+	want := "b"
+	if got != want {
+		t.Errorf("wrong node, got %q; want %q", got, want)
 	}
-	for i, n := range gotNodes {
-		if n != wantNodes[i] {
-			t.Errorf("unexpected next node: %s; want %s", n, wantNodes[i])
-		}
-	}
-	gotNodes, err = g.NextNodeIDs("b")
+	got, err = g.NextNodeID("a", "not_ok")
 	if err != nil {
 		t.Fatalf("failed to get next nodes: %v", err)
 	}
-	if len(gotNodes) != 0 {
-		t.Errorf("unexpected next node count: %d; want 0", len(gotNodes))
+	want = "c"
+	if got != want {
+		t.Errorf("wrong node, got %q; want %q", got, want)
 	}
 }
 
@@ -76,34 +72,20 @@ func TestLoadGraphFromProtoLongGraph(t *testing.T) {
 	if g.Head() != "a" {
 		t.Errorf("unexpected head: %s; want a", g.Head())
 	}
-	gotNodes, err := g.NextNodeIDs("a")
+	got, err := g.NextNodeID("a", "ok")
 	if err != nil {
 		t.Fatalf("failed to get next nodes: %v", err)
 	}
-	if len(gotNodes) != 1 {
-		t.Errorf("unexpected next node count: %d; want 1", len(gotNodes))
-	}
-	if gotNodes[0] != "b" {
-		t.Errorf("unexpected next node: %s; want b", gotNodes[0])
+	if got != "b" {
+		t.Errorf("unexpected next node: %s; want b", got)
 	}
 
-	gotNodes, err = g.NextNodeIDs("b")
+	got, err = g.NextNodeID("b", "ok")
 	if err != nil {
 		t.Fatalf("failed to get next nodes: %v", err)
 	}
-	if len(gotNodes) != 1 {
-		t.Errorf("unexpected next node count: %d; want 1", len(gotNodes))
-	}
-	if gotNodes[0] != "c" {
-		t.Errorf("unexpected next node: %s; want c", gotNodes[0])
-	}
-
-	gotNodes, err = g.NextNodeIDs("e")
-	if err != nil {
-		t.Fatalf("failed to get next nodes: %v", err)
-	}
-	if len(gotNodes) != 0 {
-		t.Errorf("unexpected next node count: %d; want 0", len(gotNodes))
+	if got != "c" {
+		t.Errorf("unexpected next node: %s; want c", got)
 	}
 }
 

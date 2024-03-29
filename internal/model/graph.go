@@ -82,19 +82,19 @@ func (g *Graph) ToProto() (*gpb.Graph, error) {
 	return pb, nil
 }
 
-func (g *Graph) NextNodeIDs(id string) ([]string, error) {
+func (g *Graph) NextNodeID(nodeID, label string) (string, error) {
 	if g == nil || g.idx == nil {
-		return nil, fmt.Errorf("graph is not initialized")
+		return "", fmt.Errorf("graph is not initialized")
 	}
-	n, ok := g.idx[id]
+	n, ok := g.idx[nodeID]
 	if !ok {
-		return nil, fmt.Errorf("node not found: %s", id)
+		return "", fmt.Errorf("node not found: %s", nodeID)
 	}
-	next := make([]string, 0, len(n.out))
-	for _, e := range n.out {
-		next = append(next, e.to.id)
+	e, found := n.out[label]
+	if !found {
+		return "", fmt.Errorf("edge not found: node %q; out label %q", nodeID, label)
 	}
-	return next, nil
+	return e.to.id, nil
 }
 
 func (g *Graph) Head() string {
