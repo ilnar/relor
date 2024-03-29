@@ -14,6 +14,7 @@ message CreateResponse {
 message CreateRequest {
 	string id = 1;
 	Reference reference = 2;
+	repeated string result_labels = 3;
 }
 
 message ClaimRequest {
@@ -22,6 +23,7 @@ message ClaimRequest {
 
 message ClaimResponse {
 	string action_id = 1;
+	repeated string result_labels = 2;
 }
 
 message ReleaseRequest {
@@ -33,6 +35,7 @@ message ReleaseResponse {
 
 message CompleteRequest {
 	string id = 1;
+	string result_label = 2;
 }
 
 message CompleteResponse {

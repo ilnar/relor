@@ -94,6 +94,7 @@ func TestJobListen(t *testing.T) {
 
 	// Create, claim, and complete job.
 	const jobID = "00000000-0000-0000-0000-000000000001"
+	labels := []string{"ok", "err"}
 
 	createResp, err := client.Create(ctx, &pb.CreateRequest{
 		Id: jobID,
@@ -101,6 +102,7 @@ func TestJobListen(t *testing.T) {
 			WorkflowId:     "00000000-0000-0000-0000-000000000002",
 			WorkflowAction: "action",
 		},
+		ResultLabels: labels,
 	})
 	if err != nil {
 		t.Fatalf("failed to create job: %v", err)
@@ -120,7 +122,8 @@ func TestJobListen(t *testing.T) {
 	}
 
 	completeResp, err := client.Complete(ctx, &pb.CompleteRequest{
-		Id: jobID,
+		Id:          jobID,
+		ResultLabel: "ok",
 	})
 	if err != nil {
 		t.Fatalf("failed to complete job: %v", err)
