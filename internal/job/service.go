@@ -55,12 +55,15 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.CreateRe
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to parse workflow id: %v", err)
 	}
+	if len(in.ResultLabels) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "result labels are empty")
+	}
 	jid := model.JobID{
 		ID:             id,
 		WorkflowID:     wid,
 		WorkflowAction: r.WorkflowAction,
 	}
-	j := model.NewJob(jid, time.Now())
+	j := model.NewJob(jid, in.ResultLabels, time.Now())
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
@@ -89,7 +92,10 @@ func (s *Server) Claim(ctx context.Context, in *pb.ClaimRequest) (*pb.ClaimRespo
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}
 
-	return &pb.ClaimResponse{ActionId: j.ID().WorkflowAction}, nil
+	return &pb.ClaimResponse{
+		ActionId:     j.ID().WorkflowAction,
+		ResultLabels: j.Labels().Slice(),
+	}, nil
 }
 
 func (s *Server) Release(ctx context.Context, in *pb.ReleaseRequest) (*pb.ReleaseResponse, error) {
@@ -126,7 +132,10 @@ func (s *Server) Complete(ctx context.Context, in *pb.CompleteRequest) (*pb.Comp
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to get job: %v", err)
 	}
-	if err := j.CloseAt(time.Now(), "completed"); err != nil {
+	if in.ResultLabel == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "result label is empty")
+	}
+	if err := j.CloseAt(time.Now(), in.ResultLabel); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to complete job: %v", err)
 	}
 	if err := s.jobs.Save(j); err != nil {
