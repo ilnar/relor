@@ -176,6 +176,8 @@ func (s *Server) Listen(in *pb.ListenRequest, stream pb.JobService_ListenServer)
 					WorkflowId:     j.ID().WorkflowID.String(),
 					WorkflowAction: j.ID().WorkflowAction,
 				},
+				AvailableLabels: j.Labels().Slice(),
+				ResultLabel:     j.ResultLabel(),
 			}); err != nil {
 				return status.Errorf(codes.Internal, "failed to send job: %v", err)
 			}
