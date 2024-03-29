@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	pollInterval  = 10 * time.Second
+	pollInterval  = 5 * time.Second
 	defaulTimeout = 60 * time.Second
 )
 

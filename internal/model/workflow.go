@@ -21,8 +21,9 @@ type Workflow struct {
 
 func NewWorkflow(id uuid.UUID, g *Graph) *Workflow {
 	return &Workflow{
-		ID:          id,
-		Status:      WorkflowStatusPending,
+		ID: id,
+		// TODO: set status to WorkflowStatusPending to stage workflows before running.
+		Status:      WorkflowStatusRunning,
 		CurrentNode: g.Head(),
 		Graph:       g,
 	}
