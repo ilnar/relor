@@ -97,6 +97,21 @@ func (g *Graph) NextNodeID(nodeID, label string) (string, error) {
 	return e.to.id, nil
 }
 
+func (g *Graph) OutLabels(nodeID string) ([]string, error) {
+	if g == nil || g.idx == nil {
+		return nil, fmt.Errorf("graph is not initialized")
+	}
+	n, ok := g.idx[nodeID]
+	if !ok {
+		return nil, fmt.Errorf("node not found: %s", nodeID)
+	}
+	labels := make([]string, 0, len(n.out))
+	for label := range n.out {
+		labels = append(labels, label)
+	}
+	return labels, nil
+}
+
 func (g *Graph) Head() string {
 	if g == nil || g.root == nil {
 		return ""

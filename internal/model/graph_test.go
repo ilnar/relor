@@ -179,3 +179,52 @@ func TestGraphDuplicateEdges(t *testing.T) {
 		t.Fatalf("unexpected success loading graph with duplicate nodes")
 	}
 }
+
+func TestGetOutLabels(t *testing.T) {
+	txt := `
+		start: "a"
+		nodes { id: "a" name: "node a" }
+		nodes { id: "b" name: "node b" }
+		nodes { id: "c" name: "node c" }
+		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
+		edges { from_id: "a" to_id: "c" condition { operation_result: "not_ok" } }
+	`
+	pb := &gpb.Graph{}
+	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	g := &Graph{}
+	if err := g.FromProto(pb); err != nil {
+		t.Fatalf("failed to load graph: %v", err)
+	}
+	got, err := g.OutLabels("a")
+	if err != nil {
+		t.Fatalf("failed to get out labels: %v", err)
+	}
+	want := []string{"ok", "not_ok"}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("unexpected difference: %v", diff)
+	}
+}
+
+func TestGetOutLabelsAtLeaf(t *testing.T) {
+	txt := `
+		start: "a"
+		nodes { id: "a" name: "node a" }
+	`
+	pb := &gpb.Graph{}
+	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+	g := &Graph{}
+	if err := g.FromProto(pb); err != nil {
+		t.Fatalf("failed to load graph: %v", err)
+	}
+	got, err := g.OutLabels("a")
+	if err != nil {
+		t.Fatalf("failed to get out labels: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("unexpected out labels: %v; want empty", got)
+	}
+}
