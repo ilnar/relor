@@ -9,6 +9,18 @@ INSERT INTO workflows (
 )
 RETURNING *;
 
+-- name: UpdateWorkflowStatus :one
+UPDATE workflows
+SET status = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: UpdateWorkflowNextAction :one
+UPDATE workflows
+SET next_action_at = $2, current_node = $3
+WHERE id = $1
+RETURNING *;
+
 -- name: GetWorkflow :one
 SELECT * FROM workflows
 WHERE id = $1 LIMIT 1;

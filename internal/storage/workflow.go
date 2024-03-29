@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ilnar/wf/gen/sqlc"
@@ -16,6 +17,8 @@ type DBQuery interface {
 	CreateWorkflow(ctx context.Context, arg sqlc.CreateWorkflowParams) (sqlc.Workflow, error)
 	GetWorkflow(ctx context.Context, id uuid.UUID) (sqlc.Workflow, error)
 	GetNextWorkflows(ctx context.Context) ([]sqlc.Workflow, error)
+	UpdateWorkflowNextAction(ctx context.Context, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error)
+	UpdateWorkflowStatus(ctx context.Context, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error)
 }
 
 type WorkflowStorage struct {
@@ -43,6 +46,27 @@ func (s *WorkflowStorage) CreateWorkflow(ctx context.Context, w model.Workflow) 
 	}
 	if _, err := s.q.CreateWorkflow(ctx, arg); err != nil {
 		return fmt.Errorf("failed to create workflow: %w", err)
+	}
+	return nil
+}
+
+func (s *WorkflowStorage) UpdateStatus(ctx context.Context, id uuid.UUID, status model.WorkflowStatus) error {
+	if _, err := s.q.UpdateWorkflowStatus(ctx, sqlc.UpdateWorkflowStatusParams{
+		ID:     id,
+		Status: string(status),
+	}); err != nil {
+		return fmt.Errorf("failed to update workflow status: %w", err)
+	}
+	return nil
+}
+
+func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, node string, nextActionAt time.Time) error {
+	if _, err := s.q.UpdateWorkflowNextAction(ctx, sqlc.UpdateWorkflowNextActionParams{
+		ID:           id,
+		CurrentNode:  node,
+		NextActionAt: nextActionAt,
+	}); err != nil {
+		return fmt.Errorf("failed to update workflow next action: %w", err)
 	}
 	return nil
 }

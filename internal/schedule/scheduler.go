@@ -75,15 +75,30 @@ func (s *Scheduler) poll(ctx context.Context) error {
 }
 
 func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
+	labels, err := w.Graph.OutLabels(w.CurrentNode)
+	if err != nil {
+		return fmt.Errorf("failed to get out labels: %w", err)
+	}
+	// No more actions to take; complete the workflow.
+	if len(labels) == 0 {
+		s.logger.InfoContext(ctx, "Completing workflow", "workflow", w)
+		w.Status = model.WorkflowStatusCompleted
+		if err := s.wfStore.UpdateStatus(ctx, w.ID, model.WorkflowStatusCompleted); err != nil {
+			return fmt.Errorf("failed to update workflow: %w", err)
+		}
+		return nil
+	}
+	// Schedule the next action.
 	jcp := &pb.CreateRequest{
 		Id: w.ID.String(),
 		Reference: &pb.Reference{
 			WorkflowId:     uuid.NewString(),
 			WorkflowAction: w.CurrentNode,
 		},
+		ResultLabels: labels,
 	}
 	s.logger.InfoContext(ctx, "Scheduling workflow", "request", jcp)
-	_, err := s.jobClient.Create(ctx, jcp)
+	_, err = s.jobClient.Create(ctx, jcp)
 	if err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
 	}

@@ -8,6 +8,7 @@ package sqlc
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -94,6 +95,59 @@ WHERE id = $1 LIMIT 1
 
 func (q *Queries) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, error) {
 	row := q.db.QueryRowContext(ctx, getWorkflow, id)
+	var i Workflow
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentNode,
+		&i.Status,
+		&i.Graph,
+		&i.CreatedAt,
+		&i.NextActionAt,
+	)
+	return i, err
+}
+
+const updateWorkflowNextAction = `-- name: UpdateWorkflowNextAction :one
+UPDATE workflows
+SET next_action_at = $2, current_node = $3
+WHERE id = $1
+RETURNING id, current_node, status, graph, created_at, next_action_at
+`
+
+type UpdateWorkflowNextActionParams struct {
+	ID           uuid.UUID `json:"id"`
+	NextActionAt time.Time `json:"next_action_at"`
+	CurrentNode  string    `json:"current_node"`
+}
+
+func (q *Queries) UpdateWorkflowNextAction(ctx context.Context, arg UpdateWorkflowNextActionParams) (Workflow, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkflowNextAction, arg.ID, arg.NextActionAt, arg.CurrentNode)
+	var i Workflow
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentNode,
+		&i.Status,
+		&i.Graph,
+		&i.CreatedAt,
+		&i.NextActionAt,
+	)
+	return i, err
+}
+
+const updateWorkflowStatus = `-- name: UpdateWorkflowStatus :one
+UPDATE workflows
+SET status = $2
+WHERE id = $1
+RETURNING id, current_node, status, graph, created_at, next_action_at
+`
+
+type UpdateWorkflowStatusParams struct {
+	ID     uuid.UUID `json:"id"`
+	Status string    `json:"status"`
+}
+
+func (q *Queries) UpdateWorkflowStatus(ctx context.Context, arg UpdateWorkflowStatusParams) (Workflow, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkflowStatus, arg.ID, arg.Status)
 	var i Workflow
 	err := row.Scan(
 		&i.ID,
