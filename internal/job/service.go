@@ -63,7 +63,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.CreateRe
 		WorkflowID:     wid,
 		WorkflowAction: r.WorkflowAction,
 	}
-	j := model.NewJob(jid, in.ResultLabels, time.Now())
+	j := model.NewJob(jid, in.ResultLabels, time.Now(), in.Ttl.AsDuration())
 	if err := s.jobs.Save(j); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to save job: %v", err)
 	}

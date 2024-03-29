@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestJobLabels(t *testing.T) {
@@ -12,10 +13,11 @@ func TestJobLabels(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse time: %v", err)
 	}
-	j := NewJob(JobID{}, []string{"a", "b"}, d)
+	j := NewJob(JobID{}, []string{"a", "b"}, d, 10*time.Second)
 	got := j.Labels().Slice()
 	want := []string{"a", "b"}
-	if diff := cmp.Diff(want, got); diff != "" {
+	copts := cmpopts.SortSlices(func(a, b string) bool { return a < b })
+	if diff := cmp.Diff(want, got, copts); diff != "" {
 		t.Errorf("unexpected difference: %v", diff)
 	}
 
@@ -35,7 +37,7 @@ func TestJobLabelsError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse time: %v", err)
 	}
-	j := NewJob(JobID{}, []string{"a", "b"}, d)
+	j := NewJob(JobID{}, []string{"a", "b"}, d, 10*time.Second)
 	if err = j.ClaimAt(d.Add(10 * time.Second)); err != nil {
 		t.Fatalf("failed to claim job: %v", err)
 	}

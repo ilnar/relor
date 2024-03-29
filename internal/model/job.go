@@ -29,10 +29,11 @@ type Job struct {
 	createdAt   time.Time
 	claimedAt   time.Time
 	closedAt    time.Time
+	expiresAt   time.Time
 	resultLabel string
 }
 
-func NewJob(jid JobID, labels []string, createdAt time.Time) *Job {
+func NewJob(jid JobID, labels []string, createdAt time.Time, ttl time.Duration) *Job {
 	l := make(labelSet, len(labels))
 	for _, label := range labels {
 		l[label] = struct{}{}
@@ -41,6 +42,7 @@ func NewJob(jid JobID, labels []string, createdAt time.Time) *Job {
 		jid:       jid,
 		labels:    l,
 		createdAt: createdAt,
+		expiresAt: createdAt.Add(ttl),
 	}
 }
 
@@ -54,6 +56,10 @@ func (j *Job) Labels() labelSet {
 
 func (j *Job) ResultLabel() string {
 	return j.resultLabel
+}
+
+func (j *Job) ExpiresAt() time.Time {
+	return j.expiresAt
 }
 
 func (j *Job) ClaimAt(t time.Time) error {
