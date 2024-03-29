@@ -132,6 +132,32 @@ func (q *Queries) UpdateWorkflowNextAction(ctx context.Context, arg UpdateWorkfl
 	return i, err
 }
 
+const updateWorkflowNextActionAt = `-- name: UpdateWorkflowNextActionAt :one
+UPDATE workflows
+SET next_action_at = now() + $2::bigint * interval '1 second'
+WHERE id = $1
+RETURNING id, current_node, status, graph, created_at, next_action_at
+`
+
+type UpdateWorkflowNextActionAtParams struct {
+	ID    uuid.UUID `json:"id"`
+	Delay int64     `json:"delay"`
+}
+
+func (q *Queries) UpdateWorkflowNextActionAt(ctx context.Context, arg UpdateWorkflowNextActionAtParams) (Workflow, error) {
+	row := q.db.QueryRowContext(ctx, updateWorkflowNextActionAt, arg.ID, arg.Delay)
+	var i Workflow
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentNode,
+		&i.Status,
+		&i.Graph,
+		&i.CreatedAt,
+		&i.NextActionAt,
+	)
+	return i, err
+}
+
 const updateWorkflowStatus = `-- name: UpdateWorkflowStatus :one
 UPDATE workflows
 SET status = $2

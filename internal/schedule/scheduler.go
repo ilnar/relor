@@ -14,7 +14,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const pollInterval = 30 * time.Second
+const (
+	pollInterval  = 10 * time.Second
+	defaulTimeout = 60 * time.Second
+)
 
 type Logger interface {
 	InfoContext(ctx context.Context, msg string, args ...any)
@@ -117,6 +120,7 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 	if err != nil {
 		return fmt.Errorf("failed to get out labels: %w", err)
 	}
+
 	// Schedule the next action.
 	jcp := &pb.CreateRequest{
 		Id: uuid.NewString(),
@@ -130,6 +134,19 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 	_, err = s.jobClient.Create(ctx, jcp)
 	if err != nil {
 		return fmt.Errorf("failed to create job: %w", err)
+	}
+
+	// Set the timeout for this job.
+	// When the timeout is reached, a new job for the same action will be created.
+	timeout, err := w.Graph.Timeout(w.CurrentNode)
+	if err != nil {
+		return fmt.Errorf("failed to get timeout: %w", err)
+	}
+	if timeout == 0 {
+		timeout = time.Duration(defaulTimeout)
+	}
+	if err := s.wfStore.UpdateTimeout(ctx, w.ID, timeout); err != nil {
+		return fmt.Errorf("failed to update timeout: %w", err)
 	}
 	return nil
 }

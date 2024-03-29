@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	gpb "github.com/ilnar/wf/gen/pb/graph"
 )
@@ -9,6 +10,7 @@ import (
 type node struct {
 	id, name string
 	in, out  map[string]*edge
+	timeout  time.Duration
 }
 
 type edge struct {
@@ -97,6 +99,17 @@ func (g *Graph) NextNodeID(nodeID, label string) (string, error) {
 	return e.to.id, nil
 }
 
+func (g *Graph) Timeout(nodeID string) (time.Duration, error) {
+	if g == nil || g.idx == nil {
+		return 0, fmt.Errorf("graph is not initialized")
+	}
+	n, ok := g.idx[nodeID]
+	if !ok {
+		return 0, fmt.Errorf("node not found: %s", nodeID)
+	}
+	return n.timeout, nil
+}
+
 func (g *Graph) OutLabels(nodeID string) ([]string, error) {
 	if g == nil || g.idx == nil {
 		return nil, fmt.Errorf("graph is not initialized")
@@ -123,13 +136,22 @@ func indexNodes(g *gpb.Graph) (map[string]*node, error) {
 	i := make(map[string]*node, len(g.Nodes))
 	for _, n := range g.Nodes {
 		if _, found := i[n.Id]; found {
-			return nil, fmt.Errorf("duplicate node id: %s", n.Id)
+			return nil, fmt.Errorf("duplicate node id: %q", n.Id)
+		}
+		timeout := 0 * time.Second
+		if g.Config != nil && g.Config.DefaultTimeout != nil {
+			timeout = g.Config.DefaultTimeout.AsDuration()
+		}
+
+		if n.Op != nil && n.Op.Timeout != nil {
+			timeout = n.Op.Timeout.AsDuration()
 		}
 		i[n.Id] = &node{
-			id:   n.Id,
-			name: n.Name,
-			in:   make(map[string]*edge),
-			out:  make(map[string]*edge),
+			id:      n.Id,
+			name:    n.Name,
+			in:      make(map[string]*edge),
+			out:     make(map[string]*edge),
+			timeout: timeout,
 		}
 	}
 	return i, nil

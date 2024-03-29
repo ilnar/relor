@@ -25,8 +25,16 @@ message Edge {
     TransitionCondition condition = 3;
 }
 
+message Config {
+    google.protobuf.Duration defaultTimeout = 1;
+}
+
 message Graph {
-    string start = 1;
-    repeated Node nodes = 2;
-    repeated Edge edges = 3;
+    Config config = 1;
+
+    // The ID of the first node in the graph, i.e. where to start the workflow.
+    string start = 2;
+
+    repeated Node nodes = 3;
+    repeated Edge edges = 4;
 }

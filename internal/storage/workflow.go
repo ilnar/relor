@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ilnar/wf/gen/sqlc"
@@ -18,6 +19,7 @@ type DBQuery interface {
 	GetNextWorkflows(ctx context.Context) ([]sqlc.Workflow, error)
 	UpdateWorkflowNextAction(ctx context.Context, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error)
 	UpdateWorkflowStatus(ctx context.Context, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error)
+	UpdateWorkflowNextActionAt(ctx context.Context, arg sqlc.UpdateWorkflowNextActionAtParams) (sqlc.Workflow, error)
 }
 
 type WorkflowStorage struct {
@@ -49,16 +51,6 @@ func (s *WorkflowStorage) CreateWorkflow(ctx context.Context, w model.Workflow) 
 	return nil
 }
 
-func (s *WorkflowStorage) UpdateStatus(ctx context.Context, id uuid.UUID, status model.WorkflowStatus) error {
-	if _, err := s.q.UpdateWorkflowStatus(ctx, sqlc.UpdateWorkflowStatusParams{
-		ID:     id,
-		Status: string(status),
-	}); err != nil {
-		return fmt.Errorf("failed to update workflow status: %w", err)
-	}
-	return nil
-}
-
 func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, label string) error {
 	wf, err := s.GetWorkflow(ctx, id)
 	if err != nil {
@@ -79,9 +71,22 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, la
 		return fmt.Errorf("failed to get out labels: %w", err)
 	}
 	if len(nextLabels) == 0 {
-		if err := s.UpdateStatus(ctx, id, model.WorkflowStatusCompleted); err != nil {
+		if _, err := s.q.UpdateWorkflowStatus(ctx, sqlc.UpdateWorkflowStatusParams{
+			ID:     id,
+			Status: string(model.WorkflowStatusCompleted),
+		}); err != nil {
 			return fmt.Errorf("failed to update workflow status: %w", err)
 		}
+	}
+	return nil
+}
+
+func (s *WorkflowStorage) UpdateTimeout(ctx context.Context, id uuid.UUID, timeout time.Duration) error {
+	if _, err := s.q.UpdateWorkflowNextActionAt(ctx, sqlc.UpdateWorkflowNextActionAtParams{
+		ID:    id,
+		Delay: int64(timeout.Seconds()),
+	}); err != nil {
+		return fmt.Errorf("failed to update workflow next action at: %w", err)
 	}
 	return nil
 }
