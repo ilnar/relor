@@ -17,14 +17,8 @@ import (
 type fakeDBTX struct {
 }
 
-func (f *fakeDBTX) Begin() (*sql.Tx, error) {
+func (f *fakeDBTX) BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error) {
 	return nil, nil
-}
-func (f *fakeDBTX) Rollback() error {
-	return nil
-}
-func (f *fakeDBTX) Commit() error {
-	return nil
 }
 func (f *fakeDBTX) ExecContext(context.Context, string, ...interface{}) (sql.Result, error) {
 	return nil, nil

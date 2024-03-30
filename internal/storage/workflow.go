@@ -26,7 +26,7 @@ type DBQuery interface {
 type TxManager interface {
 	sqlc.DBTX
 
-	Begin() (*sql.Tx, error)
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
 type WorkflowStorage struct {
@@ -60,7 +60,7 @@ func (s *WorkflowStorage) CreateWorkflow(ctx context.Context, w model.Workflow) 
 }
 
 func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, label string) error {
-	tx, err := s.txm.Begin()
+	tx, err := s.txm.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
