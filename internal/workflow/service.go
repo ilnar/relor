@@ -80,7 +80,15 @@ func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.UpdateRe
 	if in.ResultLabel == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "result label is empty")
 	}
-	if err := s.store.UpdateNextAction(ctx, id, in.ResultLabel); err != nil {
+	if in.CurrentAction == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "current action is empty")
+	}
+	na := storage.NextAction{
+		ID:            id,
+		Label:         in.ResultLabel,
+		CurrentAction: in.CurrentAction,
+	}
+	if err := s.store.UpdateNextAction(ctx, na); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update next action: %v", err)
 	}
 	return &pb.UpdateResponse{}, nil
