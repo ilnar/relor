@@ -50,6 +50,44 @@ func (q *Queries) CreateWorkflow(ctx context.Context, db DBTX, arg CreateWorkflo
 	return i, err
 }
 
+const createWorkflowEvent = `-- name: CreateWorkflowEvent :one
+INSERT INTO workflow_events (
+  workflow_id,
+  from_node,
+  to_node,
+  label
+) VALUES (
+  $1, $2, $3, $4
+)
+RETURNING id, workflow_id, from_node, to_node, label, created_at
+`
+
+type CreateWorkflowEventParams struct {
+	WorkflowID uuid.UUID `json:"workflow_id"`
+	FromNode   string    `json:"from_node"`
+	ToNode     string    `json:"to_node"`
+	Label      string    `json:"label"`
+}
+
+func (q *Queries) CreateWorkflowEvent(ctx context.Context, db DBTX, arg CreateWorkflowEventParams) (WorkflowEvent, error) {
+	row := db.QueryRowContext(ctx, createWorkflowEvent,
+		arg.WorkflowID,
+		arg.FromNode,
+		arg.ToNode,
+		arg.Label,
+	)
+	var i WorkflowEvent
+	err := row.Scan(
+		&i.ID,
+		&i.WorkflowID,
+		&i.FromNode,
+		&i.ToNode,
+		&i.Label,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getNextWorkflows = `-- name: GetNextWorkflows :many
 SELECT id, current_node, status, graph, created_at, next_action_at FROM workflows
 WHERE status = 'running'

@@ -39,12 +39,11 @@ LIMIT 10;
 
 -- name: CreateWorkflowEvent :one
 INSERT INTO workflow_events (
-  id,
   workflow_id,
   from_node,
   to_node,
   label
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4
 )
 RETURNING *;
