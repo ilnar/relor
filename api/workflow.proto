@@ -24,9 +24,24 @@ message GetRequest {
 
 message GetResponse {
     WorkflowState state = 1;
+    string current_action = 2;
+    repeated string available_result_labels = 3;
+}
+
+message UpdateRequest {
+    string id = 1;
+
+    // Repeat current action to mitigate race conditions.
+    string current_action = 2;
+    
+    string result_label = 3;
+}
+
+message UpdateResponse {
 }
 
 service WorkflowService {
     rpc Run(RunRequest) returns (RunResponse) {};
     rpc Get(GetRequest) returns (GetResponse) {};
+    rpc Update(UpdateRequest) returns (UpdateResponse) {};
 }

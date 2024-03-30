@@ -87,6 +87,8 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, la
 	}); err != nil {
 		return fmt.Errorf("failed to update workflow next action: %w", err)
 	}
+
+	// Update status if no next labels.
 	nextLabels, err := wf.Graph.OutLabels(nextNode)
 	if err != nil {
 		return fmt.Errorf("failed to get out labels: %w", err)
