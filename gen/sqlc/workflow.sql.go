@@ -108,7 +108,7 @@ func (q *Queries) GetWorkflow(ctx context.Context, id uuid.UUID) (Workflow, erro
 
 const updateWorkflowNextAction = `-- name: UpdateWorkflowNextAction :one
 UPDATE workflows
-SET current_node = $2, next_action_at = now() + interval '10 seconds'
+SET current_node = $2, next_action_at = now() + interval '2 seconds'
 WHERE id = $1
 RETURNING id, current_node, status, graph, created_at, next_action_at
 `
