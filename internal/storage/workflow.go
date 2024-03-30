@@ -59,7 +59,13 @@ func (s *WorkflowStorage) CreateWorkflow(ctx context.Context, w model.Workflow) 
 	return nil
 }
 
-func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, label string) error {
+type NextAction struct {
+	ID            uuid.UUID
+	Label         string
+	CurrentAction string
+}
+
+func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) error {
 	tx, err := s.txm.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -67,7 +73,7 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, la
 	defer tx.Rollback()
 
 	// Get workflow.
-	w, err := s.q.GetWorkflow(ctx, tx, id)
+	w, err := s.q.GetWorkflow(ctx, tx, na.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get workflow: %w", err)
 	}
@@ -76,24 +82,31 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, id uuid.UUID, la
 		return fmt.Errorf("failed to convert workflow: %w", err)
 	}
 
+	// Validate current action.
+	if wf.CurrentNode != na.CurrentAction {
+		return fmt.Errorf("current action is not valid, possible race condition")
+	}
+
 	// Update next action.
-	nextNode, err := wf.Graph.NextNodeID(wf.CurrentNode, label)
+	nextNode, err := wf.Graph.NextNodeID(wf.CurrentNode, na.Label)
 	if err != nil {
 		return fmt.Errorf("failed to get next node: %w", err)
 	}
 	if _, err := s.q.UpdateWorkflowNextAction(ctx, tx, sqlc.UpdateWorkflowNextActionParams{
-		ID:          id,
+		ID:          na.ID,
 		CurrentNode: nextNode,
 	}); err != nil {
 		return fmt.Errorf("failed to update workflow next action: %w", err)
 	}
+
+	// Update status if no next labels.
 	nextLabels, err := wf.Graph.OutLabels(nextNode)
 	if err != nil {
 		return fmt.Errorf("failed to get out labels: %w", err)
 	}
 	if len(nextLabels) == 0 {
 		if _, err := s.q.UpdateWorkflowStatus(ctx, tx, sqlc.UpdateWorkflowStatusParams{
-			ID:     id,
+			ID:     na.ID,
 			Status: string(model.WorkflowStatusCompleted),
 		}); err != nil {
 			return fmt.Errorf("failed to update workflow status: %w", err)
