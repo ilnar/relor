@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -13,6 +14,31 @@ import (
 	pb "github.com/ilnar/wf/gen/pb/graph"
 )
 
+type fakeDBTX struct {
+}
+
+func (f *fakeDBTX) Begin() (*sql.Tx, error) {
+	return nil, nil
+}
+func (f *fakeDBTX) Rollback() error {
+	return nil
+}
+func (f *fakeDBTX) Commit() error {
+	return nil
+}
+func (f *fakeDBTX) ExecContext(context.Context, string, ...interface{}) (sql.Result, error) {
+	return nil, nil
+}
+func (f *fakeDBTX) PrepareContext(context.Context, string) (*sql.Stmt, error) {
+	return nil, nil
+}
+func (f *fakeDBTX) QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error) {
+	return nil, nil
+}
+func (f *fakeDBTX) QueryRowContext(context.Context, string, ...interface{}) *sql.Row {
+	return nil
+}
+
 type fakeDBQuery struct {
 	wfs map[uuid.UUID]sqlc.Workflow
 }
@@ -23,7 +49,7 @@ func newFakeDBQuery() *fakeDBQuery {
 	}
 }
 
-func (f *fakeDBQuery) CreateWorkflow(_ context.Context, arg sqlc.CreateWorkflowParams) (sqlc.Workflow, error) {
+func (f *fakeDBQuery) CreateWorkflow(_ context.Context, _ sqlc.DBTX, arg sqlc.CreateWorkflowParams) (sqlc.Workflow, error) {
 	w := sqlc.Workflow{
 		ID:          arg.ID,
 		CurrentNode: arg.CurrentNode,
@@ -34,7 +60,7 @@ func (f *fakeDBQuery) CreateWorkflow(_ context.Context, arg sqlc.CreateWorkflowP
 	return w, nil
 }
 
-func (f *fakeDBQuery) GetWorkflow(_ context.Context, id uuid.UUID) (sqlc.Workflow, error) {
+func (f *fakeDBQuery) GetWorkflow(_ context.Context, _ sqlc.DBTX, id uuid.UUID) (sqlc.Workflow, error) {
 	w, ok := f.wfs[id]
 	if !ok {
 		return sqlc.Workflow{}, errors.New("not found")
@@ -42,19 +68,19 @@ func (f *fakeDBQuery) GetWorkflow(_ context.Context, id uuid.UUID) (sqlc.Workflo
 	return w, nil
 }
 
-func (f *fakeDBQuery) GetNextWorkflows(_ context.Context) ([]sqlc.Workflow, error) {
+func (f *fakeDBQuery) GetNextWorkflows(_ context.Context, _ sqlc.DBTX) ([]sqlc.Workflow, error) {
 	return nil, nil
 }
 
-func (f *fakeDBQuery) UpdateWorkflowNextAction(_ context.Context, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error) {
+func (f *fakeDBQuery) UpdateWorkflowNextAction(_ context.Context, _ sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error) {
 	return sqlc.Workflow{}, nil
 }
 
-func (f *fakeDBQuery) UpdateWorkflowStatus(_ context.Context, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error) {
+func (f *fakeDBQuery) UpdateWorkflowStatus(_ context.Context, _ sqlc.DBTX, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error) {
 	return sqlc.Workflow{}, nil
 }
 
-func (f *fakeDBQuery) UpdateWorkflowNextActionAt(_ context.Context, arg sqlc.UpdateWorkflowNextActionAtParams) (sqlc.Workflow, error) {
+func (f *fakeDBQuery) UpdateWorkflowNextActionAt(_ context.Context, _ sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionAtParams) (sqlc.Workflow, error) {
 	return sqlc.Workflow{}, nil
 }
 
@@ -74,7 +100,7 @@ func TestCreateWorkflow(t *testing.T) {
 
 	id := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	ctx := context.Background()
-	ws := NewWorkflowStorage(newFakeDBQuery())
+	ws := NewWorkflowStorage(newFakeDBQuery(), &fakeDBTX{})
 	want := model.Workflow{
 		ID:          id,
 		CurrentNode: "a",
@@ -96,7 +122,7 @@ func TestCreateWorkflow(t *testing.T) {
 func TestWorkflowNotFound(t *testing.T) {
 	id := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	ctx := context.Background()
-	ws := NewWorkflowStorage(newFakeDBQuery())
+	ws := NewWorkflowStorage(newFakeDBQuery(), &fakeDBTX{})
 	_, err := ws.GetWorkflow(ctx, id)
 	if err == nil {
 		t.Fatal("expected error, got nil")
