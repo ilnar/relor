@@ -21,6 +21,7 @@ type DBQuery interface {
 	UpdateWorkflowNextAction(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error)
 	UpdateWorkflowStatus(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error)
 	UpdateWorkflowNextActionAt(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionAtParams) (sqlc.Workflow, error)
+	CreateWorkflowEvent(ctx context.Context, db sqlc.DBTX, arg sqlc.CreateWorkflowEventParams) (sqlc.WorkflowEvent, error)
 }
 
 type TxManager interface {
@@ -97,6 +98,15 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) e
 		CurrentNode: nextNode,
 	}); err != nil {
 		return fmt.Errorf("failed to update workflow next action: %w", err)
+	}
+	e := sqlc.CreateWorkflowEventParams{
+		WorkflowID: na.ID,
+		Label:      na.Label,
+		FromNode:   wf.CurrentNode,
+		ToNode:     nextNode,
+	}
+	if _, err := s.q.CreateWorkflowEvent(ctx, tx, e); err != nil {
+		return fmt.Errorf("failed to create workflow event: %w", err)
 	}
 
 	// Update status if no next labels.

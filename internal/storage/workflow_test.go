@@ -78,6 +78,10 @@ func (f *fakeDBQuery) UpdateWorkflowNextActionAt(_ context.Context, _ sqlc.DBTX,
 	return sqlc.Workflow{}, nil
 }
 
+func (f *fakeDBQuery) CreateWorkflowEvent(_ context.Context, _ sqlc.DBTX, arg sqlc.CreateWorkflowEventParams) (sqlc.WorkflowEvent, error) {
+	return sqlc.WorkflowEvent{}, nil
+}
+
 func TestCreateWorkflow(t *testing.T) {
 	txt := `
 		start: "a"
