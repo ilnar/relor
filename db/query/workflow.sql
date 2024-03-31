@@ -63,3 +63,7 @@ UPDATE transitions
 SET "next" = $2
 WHERE id = $1
 RETURNING *;
+
+-- name: GetTransitions :many
+SELECT * FROM transitions
+WHERE workflow_id = $1;

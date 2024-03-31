@@ -94,6 +94,10 @@ func (f *fakeDBQuery) GetFirstTransition(_ context.Context, _ sqlc.DBTX, workflo
 	return nil, nil
 }
 
+func (f *fakeDBQuery) GetTransitions(_ context.Context, _ sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error) {
+	return nil, nil
+}
+
 func TestCreateWorkflow(t *testing.T) {
 	txt := `
 		start: "a"
