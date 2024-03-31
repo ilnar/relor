@@ -170,16 +170,20 @@ func (s *Server) Listen(in *pb.ListenRequest, stream pb.JobService_ListenServer)
 				"operation", in.ListenTo,
 				"worker_id", in.WorkerId,
 			)
-			if err := stream.Send(&pb.Job{
-				Id: j.ID().ID.String(),
-				Reference: &pb.Reference{
-					WorkflowId:     j.ID().WorkflowID.String(),
-					WorkflowAction: j.ID().WorkflowAction,
-				},
-				AvailableLabels: j.Labels().Slice(),
-				ResultLabel:     j.ResultLabel(),
-			}); err != nil {
-				return status.Errorf(codes.Internal, "failed to send job: %v", err)
+			if j.ExpiresAt().After(time.Now()) {
+				if err := stream.Send(&pb.Job{
+					Id: j.ID().ID.String(),
+					Reference: &pb.Reference{
+						WorkflowId:     j.ID().WorkflowID.String(),
+						WorkflowAction: j.ID().WorkflowAction,
+					},
+					AvailableLabels: j.Labels().Slice(),
+					ResultLabel:     j.ResultLabel(),
+				}); err != nil {
+					return status.Errorf(codes.Internal, "failed to send job: %v", err)
+				}
+			} else {
+				s.logger.InfoContext(stream.Context(), "Job expired", "id", j.ID().ID)
 			}
 		case <-stream.Context().Done():
 			s.logger.InfoContext(stream.Context(), "Stopped listening for jobs", "worker_id", in.WorkerId, "operation", in.ListenTo)
