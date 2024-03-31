@@ -78,8 +78,20 @@ func (f *fakeDBQuery) UpdateWorkflowNextActionAt(_ context.Context, _ sqlc.DBTX,
 	return sqlc.Workflow{}, nil
 }
 
-func (f *fakeDBQuery) CreateWorkflowEvent(_ context.Context, _ sqlc.DBTX, arg sqlc.CreateWorkflowEventParams) (sqlc.WorkflowEvent, error) {
-	return sqlc.WorkflowEvent{}, nil
+func (f *fakeDBQuery) CreateTransition(_ context.Context, _ sqlc.DBTX, arg sqlc.CreateTransitionParams) (sqlc.Transition, error) {
+	return sqlc.Transition{}, nil
+}
+
+func (f *fakeDBQuery) UpdateTransitionNext(_ context.Context, _ sqlc.DBTX, arg sqlc.UpdateTransitionNextParams) (sqlc.Transition, error) {
+	return sqlc.Transition{}, nil
+}
+
+func (f *fakeDBQuery) GetLatestTransition(_ context.Context, _ sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error) {
+	return nil, nil
+}
+
+func (f *fakeDBQuery) GetFirstTransition(_ context.Context, _ sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error) {
+	return nil, nil
 }
 
 func TestCreateWorkflow(t *testing.T) {

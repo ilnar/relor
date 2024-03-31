@@ -37,13 +37,29 @@ WHERE status = 'running'
   AND next_action_at <= now()
 LIMIT 10;
 
--- name: CreateWorkflowEvent :one
-INSERT INTO workflow_events (
+-- name: CreateTransition :one
+INSERT INTO transitions (
   workflow_id,
   from_node,
   to_node,
-  label
+  label,
+  previous,
+  "next"
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5, $6
 )
+RETURNING *;
+
+-- name: GetLatestTransition :many
+SELECT * FROM transitions
+WHERE workflow_id = $1 AND "next" IS NULL;
+
+-- name: GetFirstTransition :many
+SELECT * FROM transitions
+WHERE workflow_id = $1 AND previous IS NULL;
+
+-- name: UpdateTransitionNext :one
+UPDATE transitions
+SET "next" = $2
+WHERE id = $1
 RETURNING *;
