@@ -21,7 +21,10 @@ type DBQuery interface {
 	UpdateWorkflowNextAction(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionParams) (sqlc.Workflow, error)
 	UpdateWorkflowStatus(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowStatusParams) (sqlc.Workflow, error)
 	UpdateWorkflowNextActionAt(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateWorkflowNextActionAtParams) (sqlc.Workflow, error)
-	CreateWorkflowEvent(ctx context.Context, db sqlc.DBTX, arg sqlc.CreateWorkflowEventParams) (sqlc.WorkflowEvent, error)
+	CreateTransition(ctx context.Context, db sqlc.DBTX, arg sqlc.CreateTransitionParams) (sqlc.Transition, error)
+	GetLatestTransition(ctx context.Context, db sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error)
+	GetFirstTransition(ctx context.Context, db sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error)
+	UpdateTransitionNext(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateTransitionNextParams) (sqlc.Transition, error)
 }
 
 type TxManager interface {
@@ -88,25 +91,78 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) e
 		return fmt.Errorf("current action is not valid, possible race condition")
 	}
 
-	// Update next action.
+	// Get next node.
 	nextNode, err := wf.Graph.NextNodeID(wf.CurrentNode, na.Label)
 	if err != nil {
 		return fmt.Errorf("failed to get next node: %w", err)
 	}
+
+	// Create transitions.
+	oldTns, err := s.q.GetLatestTransition(ctx, tx, w.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get latest transition: %w", err)
+	}
+	if len(oldTns) > 1 {
+		return fmt.Errorf("more than one last transitions found")
+	}
+	previosID := uuid.NullUUID{}
+	if len(oldTns) == 1 {
+		previosID = uuid.NullUUID{UUID: oldTns[0].ID, Valid: true}
+	}
+
+	firstTns, err := s.q.GetFirstTransition(ctx, tx, w.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get first transition: %w", err)
+	}
+	if len(firstTns) > 1 {
+		return fmt.Errorf("more than one first transitions found")
+	}
+	firstTnID := uuid.NullUUID{}
+	if len(firstTns) == 1 {
+		firstTnID = uuid.NullUUID{UUID: firstTns[0].ID, Valid: true}
+	}
+
+	newTn, err := s.q.CreateTransition(ctx, tx, sqlc.CreateTransitionParams{
+		WorkflowID: w.ID,
+		FromNode:   wf.CurrentNode,
+		ToNode:     nextNode,
+		Label:      na.Label,
+		Previous:   previosID,
+		// This creates a loop, however we need this to meet these constraints:
+		// 1. We can't have two transitions with empty Next field.
+		// 2. We can't have two transitions with the same Next field.
+		// 3. Next has to point to a real transition.
+		// The only free and valid transition ID if the one at the beginning of the linked list.
+		// We will set this to NULL in the next step.
+		Next: firstTnID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to stage transition: %w", err)
+	}
+
+	if len(oldTns) == 1 {
+		if _, err := s.q.UpdateTransitionNext(ctx, tx, sqlc.UpdateTransitionNextParams{
+			ID:   oldTns[0].ID,
+			Next: uuid.NullUUID{UUID: newTn.ID, Valid: true},
+		}); err != nil {
+			return fmt.Errorf("failed to update transition next: %w", err)
+		}
+	}
+
+	if _, err := s.q.UpdateTransitionNext(ctx, tx, sqlc.UpdateTransitionNextParams{
+		ID: newTn.ID,
+		// Now as we set the previous transition's Next field, we can use Null again.
+		Next: uuid.NullUUID{},
+	}); err != nil {
+		return fmt.Errorf("failed to update transition next: %w", err)
+	}
+
+	// Update next action.
 	if _, err := s.q.UpdateWorkflowNextAction(ctx, tx, sqlc.UpdateWorkflowNextActionParams{
 		ID:          na.ID,
 		CurrentNode: nextNode,
 	}); err != nil {
 		return fmt.Errorf("failed to update workflow next action: %w", err)
-	}
-	e := sqlc.CreateWorkflowEventParams{
-		WorkflowID: na.ID,
-		Label:      na.Label,
-		FromNode:   wf.CurrentNode,
-		ToNode:     nextNode,
-	}
-	if _, err := s.q.CreateWorkflowEvent(ctx, tx, e); err != nil {
-		return fmt.Errorf("failed to create workflow event: %w", err)
 	}
 
 	// Update status if no next labels.

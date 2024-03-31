@@ -12,6 +12,52 @@ import (
 	"github.com/google/uuid"
 )
 
+const createTransition = `-- name: CreateTransition :one
+INSERT INTO transitions (
+  workflow_id,
+  from_node,
+  to_node,
+  label,
+  previous,
+  "next"
+) VALUES (
+  $1, $2, $3, $4, $5, $6
+)
+RETURNING id, workflow_id, from_node, to_node, label, created_at, previous, next
+`
+
+type CreateTransitionParams struct {
+	WorkflowID uuid.UUID     `json:"workflow_id"`
+	FromNode   string        `json:"from_node"`
+	ToNode     string        `json:"to_node"`
+	Label      string        `json:"label"`
+	Previous   uuid.NullUUID `json:"previous"`
+	Next       uuid.NullUUID `json:"next"`
+}
+
+func (q *Queries) CreateTransition(ctx context.Context, db DBTX, arg CreateTransitionParams) (Transition, error) {
+	row := db.QueryRowContext(ctx, createTransition,
+		arg.WorkflowID,
+		arg.FromNode,
+		arg.ToNode,
+		arg.Label,
+		arg.Previous,
+		arg.Next,
+	)
+	var i Transition
+	err := row.Scan(
+		&i.ID,
+		&i.WorkflowID,
+		&i.FromNode,
+		&i.ToNode,
+		&i.Label,
+		&i.CreatedAt,
+		&i.Previous,
+		&i.Next,
+	)
+	return i, err
+}
+
 const createWorkflow = `-- name: CreateWorkflow :one
 INSERT INTO workflows (
   id,
@@ -50,42 +96,78 @@ func (q *Queries) CreateWorkflow(ctx context.Context, db DBTX, arg CreateWorkflo
 	return i, err
 }
 
-const createWorkflowEvent = `-- name: CreateWorkflowEvent :one
-INSERT INTO workflow_events (
-  workflow_id,
-  from_node,
-  to_node,
-  label
-) VALUES (
-  $1, $2, $3, $4
-)
-RETURNING id, workflow_id, from_node, to_node, label, created_at
+const getFirstTransition = `-- name: GetFirstTransition :many
+SELECT id, workflow_id, from_node, to_node, label, created_at, previous, next FROM transitions
+WHERE workflow_id = $1 AND previous IS NULL
 `
 
-type CreateWorkflowEventParams struct {
-	WorkflowID uuid.UUID `json:"workflow_id"`
-	FromNode   string    `json:"from_node"`
-	ToNode     string    `json:"to_node"`
-	Label      string    `json:"label"`
+func (q *Queries) GetFirstTransition(ctx context.Context, db DBTX, workflowID uuid.UUID) ([]Transition, error) {
+	rows, err := db.QueryContext(ctx, getFirstTransition, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transition
+	for rows.Next() {
+		var i Transition
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkflowID,
+			&i.FromNode,
+			&i.ToNode,
+			&i.Label,
+			&i.CreatedAt,
+			&i.Previous,
+			&i.Next,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
-func (q *Queries) CreateWorkflowEvent(ctx context.Context, db DBTX, arg CreateWorkflowEventParams) (WorkflowEvent, error) {
-	row := db.QueryRowContext(ctx, createWorkflowEvent,
-		arg.WorkflowID,
-		arg.FromNode,
-		arg.ToNode,
-		arg.Label,
-	)
-	var i WorkflowEvent
-	err := row.Scan(
-		&i.ID,
-		&i.WorkflowID,
-		&i.FromNode,
-		&i.ToNode,
-		&i.Label,
-		&i.CreatedAt,
-	)
-	return i, err
+const getLatestTransition = `-- name: GetLatestTransition :many
+SELECT id, workflow_id, from_node, to_node, label, created_at, previous, next FROM transitions
+WHERE workflow_id = $1 AND "next" IS NULL
+`
+
+func (q *Queries) GetLatestTransition(ctx context.Context, db DBTX, workflowID uuid.UUID) ([]Transition, error) {
+	rows, err := db.QueryContext(ctx, getLatestTransition, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transition
+	for rows.Next() {
+		var i Transition
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkflowID,
+			&i.FromNode,
+			&i.ToNode,
+			&i.Label,
+			&i.CreatedAt,
+			&i.Previous,
+			&i.Next,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getNextWorkflows = `-- name: GetNextWorkflows :many
@@ -140,6 +222,34 @@ func (q *Queries) GetWorkflow(ctx context.Context, db DBTX, id uuid.UUID) (Workf
 		&i.Graph,
 		&i.CreatedAt,
 		&i.NextActionAt,
+	)
+	return i, err
+}
+
+const updateTransitionNext = `-- name: UpdateTransitionNext :one
+UPDATE transitions
+SET "next" = $2
+WHERE id = $1
+RETURNING id, workflow_id, from_node, to_node, label, created_at, previous, next
+`
+
+type UpdateTransitionNextParams struct {
+	ID   uuid.UUID     `json:"id"`
+	Next uuid.NullUUID `json:"next"`
+}
+
+func (q *Queries) UpdateTransitionNext(ctx context.Context, db DBTX, arg UpdateTransitionNextParams) (Transition, error) {
+	row := db.QueryRowContext(ctx, updateTransitionNext, arg.ID, arg.Next)
+	var i Transition
+	err := row.Scan(
+		&i.ID,
+		&i.WorkflowID,
+		&i.FromNode,
+		&i.ToNode,
+		&i.Label,
+		&i.CreatedAt,
+		&i.Previous,
+		&i.Next,
 	)
 	return i, err
 }
