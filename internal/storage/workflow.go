@@ -25,6 +25,7 @@ type DBQuery interface {
 	GetLatestTransition(ctx context.Context, db sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error)
 	GetFirstTransition(ctx context.Context, db sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error)
 	UpdateTransitionNext(ctx context.Context, db sqlc.DBTX, arg sqlc.UpdateTransitionNextParams) (sqlc.Transition, error)
+	GetTransitions(ctx context.Context, db sqlc.DBTX, workflowID uuid.UUID) ([]sqlc.Transition, error)
 }
 
 type TxManager interface {
@@ -197,6 +198,35 @@ func getFirstAndLastTranstitions(ctx context.Context, q DBQuery, tx sqlc.DBTX, i
 		last = uuid.NullUUID{UUID: lastTns[0].ID, Valid: true}
 	}
 	return
+}
+
+func (s *WorkflowStorage) GetHistory(ctx context.Context, workflowID uuid.UUID) (*model.Transition, error) {
+	w, err := s.q.GetWorkflow(ctx, s.txm, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get workflow: %w", err)
+	}
+	ts, err := s.q.GetTransitions(ctx, s.txm, workflowID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transitions: %w", err)
+	}
+	rts := make([]model.RawTransition, 0, len(ts))
+	for _, t := range ts {
+		rts = append(rts, model.RawTransition{
+			ID:      t.ID,
+			WID:     t.WorkflowID,
+			From:    t.FromNode,
+			To:      t.ToNode,
+			Label:   t.Label,
+			Created: t.CreatedAt,
+			Prev:    t.Previous,
+			Next:    t.Next,
+		})
+	}
+	t, err := model.NewTransitionHistory(w.CreatedAt, rts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build transition history: %w", err)
+	}
+	return t, nil
 }
 
 func (s *WorkflowStorage) UpdateTimeout(ctx context.Context, id uuid.UUID, timeout time.Duration) error {

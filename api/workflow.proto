@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 option go_package="github.com/ilnar/wf/gen/pb/api";
 
+import "google/protobuf/duration.proto";
 import "graph/graph.proto";
 
 message WorkflowState {
@@ -40,8 +41,21 @@ message UpdateRequest {
 message UpdateResponse {
 }
 
+message Transition {
+    string from = 1;
+    string to = 2;
+    string label = 3;
+    google.protobuf.Duration walltime = 4;
+}
+
+message HistoryResponse {
+    repeated Transition transitions = 1;
+    string graphviz = 2;
+}
+
 service WorkflowService {
     rpc Run(RunRequest) returns (RunResponse) {};
     rpc Get(GetRequest) returns (GetResponse) {};
+    rpc History(GetRequest) returns (HistoryResponse) {};
     rpc Update(UpdateRequest) returns (UpdateResponse) {};
 }

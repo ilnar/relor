@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type WorkflowServiceClient interface {
 	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	History(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*HistoryResponse, error)
 	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 }
 
@@ -53,6 +54,15 @@ func (c *workflowServiceClient) Get(ctx context.Context, in *GetRequest, opts ..
 	return out, nil
 }
 
+func (c *workflowServiceClient) History(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*HistoryResponse, error) {
+	out := new(HistoryResponse)
+	err := c.cc.Invoke(ctx, "/api.WorkflowService/History", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *workflowServiceClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
 	out := new(UpdateResponse)
 	err := c.cc.Invoke(ctx, "/api.WorkflowService/Update", in, out, opts...)
@@ -68,6 +78,7 @@ func (c *workflowServiceClient) Update(ctx context.Context, in *UpdateRequest, o
 type WorkflowServiceServer interface {
 	Run(context.Context, *RunRequest) (*RunResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
+	History(context.Context, *GetRequest) (*HistoryResponse, error)
 	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	mustEmbedUnimplementedWorkflowServiceServer()
 }
@@ -81,6 +92,9 @@ func (UnimplementedWorkflowServiceServer) Run(context.Context, *RunRequest) (*Ru
 }
 func (UnimplementedWorkflowServiceServer) Get(context.Context, *GetRequest) (*GetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedWorkflowServiceServer) History(context.Context, *GetRequest) (*HistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method History not implemented")
 }
 func (UnimplementedWorkflowServiceServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
@@ -134,6 +148,24 @@ func _WorkflowService_Get_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkflowService_History_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkflowServiceServer).History(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.WorkflowService/History",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkflowServiceServer).History(ctx, req.(*GetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WorkflowService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateRequest)
 	if err := dec(in); err != nil {
@@ -166,6 +198,10 @@ var WorkflowService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Get",
 			Handler:    _WorkflowService_Get_Handler,
+		},
+		{
+			MethodName: "History",
+			Handler:    _WorkflowService_History_Handler,
 		},
 		{
 			MethodName: "Update",

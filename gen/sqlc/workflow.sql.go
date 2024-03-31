@@ -207,6 +207,43 @@ func (q *Queries) GetNextWorkflows(ctx context.Context, db DBTX) ([]Workflow, er
 	return items, nil
 }
 
+const getTransitions = `-- name: GetTransitions :many
+SELECT id, workflow_id, from_node, to_node, label, created_at, previous, next FROM transitions
+WHERE workflow_id = $1
+`
+
+func (q *Queries) GetTransitions(ctx context.Context, db DBTX, workflowID uuid.UUID) ([]Transition, error) {
+	rows, err := db.QueryContext(ctx, getTransitions, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transition
+	for rows.Next() {
+		var i Transition
+		if err := rows.Scan(
+			&i.ID,
+			&i.WorkflowID,
+			&i.FromNode,
+			&i.ToNode,
+			&i.Label,
+			&i.CreatedAt,
+			&i.Previous,
+			&i.Next,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getWorkflow = `-- name: GetWorkflow :one
 SELECT id, current_node, status, graph, created_at, next_action_at FROM workflows
 WHERE id = $1 LIMIT 1
