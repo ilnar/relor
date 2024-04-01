@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	pb "github.com/ilnar/wf/gen/pb/api"
+	"github.com/ilnar/wf/internal/graphviz"
 	"github.com/ilnar/wf/internal/model"
 	"github.com/ilnar/wf/internal/storage"
 	"google.golang.org/grpc/codes"
@@ -103,21 +104,33 @@ func (s *Server) History(ctx context.Context, in *pb.GetRequest) (*pb.HistoryRes
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "failed to parse id: %v", err)
 	}
+	w, err := s.store.GetWorkflow(ctx, wid)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get workflow: %v", err)
+	}
 	th, err := s.store.GetHistory(ctx, wid)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get transition history: %v", err)
 	}
 	var ts []*pb.Transition
-	for th != nil {
+	ith := th
+	for ith != nil {
 		t := &pb.Transition{
-			Label:    th.Label(),
-			Walltime: durationpb.New(th.Walltime()),
+			Label:    ith.Label(),
+			Walltime: durationpb.New(ith.Walltime()),
 		}
-		t.From, t.To = th.FromTo()
+		t.From, t.To = ith.FromTo()
 		ts = append(ts, t)
-		th = th.Next()
+		ith = ith.Next()
 	}
+
+	gv, err := graphviz.Dot(w, th)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to generate graphviz: %v", err)
+	}
+
 	return &pb.HistoryResponse{
 		Transitions: ts,
+		Graphviz:    gv,
 	}, nil
 }
