@@ -69,7 +69,7 @@ func Dot(w model.Workflow, t *model.Transition) (string, error) {
 	seenNodes := make(map[string]struct{})
 	seenNodes[w.Graph.Head()] = struct{}{}
 	for k, cnt := range counts {
-		if cnt > 1 {
+		if cnt > 0 {
 			seenNodes[k.from] = struct{}{}
 			seenNodes[k.to] = struct{}{}
 		}
