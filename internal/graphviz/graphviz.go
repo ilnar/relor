@@ -1,14 +1,42 @@
 package graphviz
 
 import (
+	"bytes"
 	"fmt"
-	"strings"
+	"html/template"
 
 	"github.com/ilnar/wf/internal/model"
 )
 
 type edgeKey struct {
 	from, to, label string
+}
+
+const dotTemplate = `digraph G {
+
+node [fontname="Helvetica,Arial,sans-serif" shape="box" style="rounded,filled" fillcolor="white"];
+edge [fontname="Helvetica,Arial,sans-serif" fontsize="10"];
+
+Start{{- range .VisitedNodes }}, {{ . }} {{- end }} [fillcolor="grey"];
+
+"{{ .CurrentNode }}" [fillcolor="magenta" color="magenta" fontcolor="white"];
+
+Start -> "{{ .StartNode }}";
+{{- range .Edges }}
+"{{ .From }}" -> "{{ .To }}" [label="{{ .Label }}" weight={{ .Weight }}{{ if eq .Weight 0 }} color="grey"{{ end }}];
+{{- end }}
+
+}`
+
+type edgeData struct {
+	From, To, Label string
+	Weight          int
+}
+
+type dotData struct {
+	VisitedNodes           []string
+	StartNode, CurrentNode string
+	Edges                  []edgeData
 }
 
 // Dot returns a Graphviz representation of the workflow.
@@ -37,11 +65,48 @@ func Dot(w model.Workflow, t *model.Transition) (string, error) {
 		th = th.Next()
 	}
 
-	var sb strings.Builder
-	sb.WriteString("digraph G { ")
-	for _, e := range keySec {
-		sb.WriteString(fmt.Sprintf("%s -> %s [label=\"%s %d\"]; ", e.from, e.to, e.label, counts[e]))
+	// Get seen nodes.
+	seenNodes := make(map[string]struct{})
+	seenNodes[w.Graph.Head()] = struct{}{}
+	for k, cnt := range counts {
+		if cnt > 1 {
+			seenNodes[k.from] = struct{}{}
+			seenNodes[k.to] = struct{}{}
+		}
 	}
-	sb.WriteString("}")
-	return sb.String(), nil
+	delete(seenNodes, w.CurrentNode)
+
+	//Prepare template data.
+	data := dotData{
+		VisitedNodes: make([]string, 0, len(seenNodes)),
+		StartNode:    w.Graph.Head(),
+		CurrentNode:  w.CurrentNode,
+		Edges:        make([]edgeData, 0, len(counts)),
+	}
+	for _, key := range keySec {
+		label := key.label
+		if counts[key] > 0 {
+			label += fmt.Sprintf(" (%d)", counts[key])
+		}
+		data.Edges = append(data.Edges, edgeData{
+			From:   key.from,
+			To:     key.to,
+			Label:  label,
+			Weight: counts[key],
+		})
+	}
+	for k := range seenNodes {
+		data.VisitedNodes = append(data.VisitedNodes, k)
+	}
+
+	// Render the template.
+	tmpl, err := template.New("dot").Parse(dotTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
+	var out bytes.Buffer
+	if err := tmpl.Execute(&out, data); err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
+	return out.String(), nil
 }
