@@ -14,9 +14,9 @@ import (
 func TestLoadGraphFromProtoWideGraph(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
-		nodes { id: "c" name: "node c" }
+		nodes { id: "a" }
+		nodes { id: "b" }
+		nodes { id: "c" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 		edges { from_id: "a" to_id: "c" condition { operation_result: "not_ok" } }
 	`
@@ -52,11 +52,11 @@ func TestLoadGraphFromProtoWideGraph(t *testing.T) {
 func TestLoadGraphFromProtoLongGraph(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
-		nodes { id: "c" name: "node c" }
-		nodes { id: "d" name: "node d" }
-		nodes { id: "e" name: "node e" }
+		nodes { id: "a" }
+		nodes { id: "b" }
+		nodes { id: "c" }
+		nodes { id: "d" }
+		nodes { id: "e" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 		edges { from_id: "b" to_id: "c" condition { operation_result: "ok" } }
 		edges { from_id: "c" to_id: "d" condition { operation_result: "ok" } }
@@ -93,9 +93,9 @@ func TestLoadGraphFromProtoLongGraph(t *testing.T) {
 func TestLoadGraphFromProtoCorruptedGraph(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
-		nodes { id: "c" name: "node c" }
+		nodes { id: "a" }
+		nodes { id: "b" }
+		nodes { id: "c" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 		edges { from_id: "b" to_id: "c" condition { operation_result: "ok" } }
 		edges { from_id: "c" to_id: "d" condition { operation_result: "ok" } }
@@ -123,9 +123,9 @@ func TestLoadGraphFromProtoUnitialised(t *testing.T) {
 func TestGraphToProto(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
-		nodes { id: "c" name: "node c" }
+		nodes { id: "a" }
+		nodes { id: "b" }
+		nodes { id: "c" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "res1" } }
 		edges { from_id: "a" to_id: "c" condition { operation_result: "res2" } }
 	`
@@ -150,8 +150,8 @@ func TestGraphToProto(t *testing.T) {
 func TestGraphDuplicateNodes(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "a" name: "node a" }
+		nodes { id: "a" }
+		nodes { id: "a" }
 	`
 	pb := &gpb.Graph{}
 	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {
@@ -166,8 +166,8 @@ func TestGraphDuplicateNodes(t *testing.T) {
 func TestGraphDuplicateEdges(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
+		nodes { id: "a" }
+		nodes { id: "b" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 	`
@@ -184,9 +184,9 @@ func TestGraphDuplicateEdges(t *testing.T) {
 func TestGetOutLabels(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
-		nodes { id: "b" name: "node b" }
-		nodes { id: "c" name: "node c" }
+		nodes { id: "a" }
+		nodes { id: "b" }
+		nodes { id: "c" }
 		edges { from_id: "a" to_id: "b" condition { operation_result: "ok" } }
 		edges { from_id: "a" to_id: "c" condition { operation_result: "not_ok" } }
 	`
@@ -212,7 +212,7 @@ func TestGetOutLabels(t *testing.T) {
 func TestGetOutLabelsAtLeaf(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
+		nodes { id: "a" }
 	`
 	pb := &gpb.Graph{}
 	if err := prototext.Unmarshal([]byte(txt), pb); err != nil {

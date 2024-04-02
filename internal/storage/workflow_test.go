@@ -101,7 +101,7 @@ func (f *fakeDBQuery) GetTransitions(_ context.Context, _ sqlc.DBTX, workflowID 
 func TestCreateWorkflow(t *testing.T) {
 	txt := `
 		start: "a"
-		nodes { id: "a" name: "node a" }
+		nodes { id: "a" }
 	`
 	gpb := &pb.Graph{}
 	if err := prototext.Unmarshal([]byte(txt), gpb); err != nil {

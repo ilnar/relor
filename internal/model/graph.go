@@ -8,9 +8,9 @@ import (
 )
 
 type node struct {
-	id, name string
-	in, out  map[string]*edge
-	timeout  time.Duration
+	id      string
+	in, out map[string]*edge
+	timeout time.Duration
 }
 
 type edge struct {
@@ -71,7 +71,7 @@ func (g *Graph) ToProto() (*gpb.Graph, error) {
 	}
 	pb := &gpb.Graph{Start: g.root.id}
 	for _, n := range g.idx {
-		pb.Nodes = append(pb.Nodes, &gpb.Node{Id: n.id, Name: n.name})
+		pb.Nodes = append(pb.Nodes, &gpb.Node{Id: n.id})
 		for label, e := range n.out {
 			pb.Edges = append(pb.Edges, &gpb.Edge{
 				FromId:    e.from.id,
@@ -148,7 +148,6 @@ func indexNodes(g *gpb.Graph) (map[string]*node, error) {
 		}
 		i[n.Id] = &node{
 			id:      n.Id,
-			name:    n.Name,
 			in:      make(map[string]*edge),
 			out:     make(map[string]*edge),
 			timeout: timeout,
