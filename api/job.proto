@@ -8,6 +8,7 @@ import "google/protobuf/duration.proto";
 message Reference {
 	string workflow_id = 1;
 	string workflow_action = 2;
+	string transition_id = 3;
 }
 
 message CreateResponse {
@@ -39,6 +40,7 @@ message ReleaseResponse {
 message CompleteRequest {
 	string id = 1;
 	string result_label = 2;
+	string transition_id = 3;
 }
 
 message CompleteResponse {

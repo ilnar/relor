@@ -82,10 +82,18 @@ func (s *Scheduler) Run(ctx context.Context) error {
 				s.logger.ErrorContext(ctx, "failed to parse workflow ID", "err", err)
 				continue
 			}
+			tid := uuid.Nil
+			if resp.Reference.TransitionId != "" {
+				tid, err = uuid.Parse(resp.Reference.TransitionId)
+				if err != nil {
+					s.logger.ErrorContext(ctx, "failed to parse transition ID", "err", err)
+					continue
+				}
+			}
 			na := storage.NextAction{
-				ID:            wfID,
-				Label:         resp.ResultLabel,
-				CurrentAction: resp.Reference.WorkflowAction,
+				ID:                wfID,
+				Label:             resp.ResultLabel,
+				CurrentTransition: tid,
 			}
 			if err := s.wfStore.UpdateNextAction(listener.Context(), na); err != nil {
 				s.logger.ErrorContext(ctx, "failed to update next workflow action", "err", err)

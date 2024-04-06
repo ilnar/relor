@@ -63,11 +63,18 @@ func (s *Server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get workflow: %v", err)
 	}
+
+	t, err := s.store.GetLatestTransition(ctx, id)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get latest transition: %v", err)
+	}
+
 	return &pb.GetResponse{
 		State: &pb.WorkflowState{
 			Status:      string(w.Status),
 			CurrentNode: w.CurrentNode,
 		},
+		TransitionId: t.String(),
 	}, nil
 }
 
@@ -82,13 +89,18 @@ func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.UpdateRe
 	if in.ResultLabel == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "result label is empty")
 	}
-	if in.CurrentAction == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "current action is empty")
+	tid := uuid.Nil
+	if in.TransitionId != "" {
+		tid, err = uuid.Parse(in.TransitionId)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to parse transition id: %v", err)
+		}
 	}
+
 	na := storage.NextAction{
-		ID:            id,
-		Label:         in.ResultLabel,
-		CurrentAction: in.CurrentAction,
+		ID:                id,
+		Label:             in.ResultLabel,
+		CurrentTransition: tid,
 	}
 	if err := s.store.UpdateNextAction(ctx, na); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to update next action: %v", err)

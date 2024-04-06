@@ -65,9 +65,9 @@ func (s *WorkflowStorage) CreateWorkflow(ctx context.Context, w model.Workflow) 
 }
 
 type NextAction struct {
-	ID            uuid.UUID
-	Label         string
-	CurrentAction string
+	ID                uuid.UUID
+	Label             string
+	CurrentTransition uuid.UUID
 }
 
 func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) error {
@@ -77,6 +77,17 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) e
 	}
 	defer tx.Rollback()
 
+	if err := s.updateNextActionTxn(ctx, tx, na); err != nil {
+		return fmt.Errorf("failed to update next action: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+}
+
+func (s *WorkflowStorage) updateNextActionTxn(ctx context.Context, tx sqlc.DBTX, na NextAction) error {
 	// Get workflow.
 	w, err := s.q.GetWorkflow(ctx, tx, na.ID)
 	if err != nil {
@@ -87,10 +98,19 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) e
 		return fmt.Errorf("failed to convert workflow: %w", err)
 	}
 
-	// Validate current action and get next node.
-	if wf.CurrentNode != na.CurrentAction {
-		return fmt.Errorf("current action is not valid, possible race condition")
+	// Validate optimistic lock.
+	lastTns, err := s.q.GetLatestTransition(ctx, tx, na.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get latest transition: %w", err)
 	}
+	if len(lastTns) > 1 {
+		return fmt.Errorf("more than one last transitions found: %v", lastTns)
+	}
+	if len(lastTns) == 1 && lastTns[0].ID != na.CurrentTransition {
+		return fmt.Errorf("optimistic lock failed: transition IDs don't match: %v != %v", lastTns[0].ID, na.CurrentTransition)
+	}
+
+	// Validate current action and get next node.
 	nextNode, err := wf.Graph.NextNodeID(wf.CurrentNode, na.Label)
 	if err != nil {
 		return fmt.Errorf("failed to get next node: %w", err)
@@ -121,9 +141,6 @@ func (s *WorkflowStorage) UpdateNextAction(ctx context.Context, na NextAction) e
 		}); err != nil {
 			return fmt.Errorf("failed to update workflow status: %w", err)
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
 }
@@ -227,6 +244,20 @@ func (s *WorkflowStorage) GetHistory(ctx context.Context, workflowID uuid.UUID) 
 		return nil, fmt.Errorf("failed to build transition history: %w", err)
 	}
 	return t, nil
+}
+
+func (s *WorkflowStorage) GetLatestTransition(ctx context.Context, workflowID uuid.UUID) (uuid.UUID, error) {
+	t, err := s.q.GetLatestTransition(ctx, s.txm, workflowID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to get latest transition: %w", err)
+	}
+	if len(t) > 1 {
+		return uuid.Nil, fmt.Errorf("more than one last transitions found: %v", t)
+	}
+	if len(t) == 0 {
+		return uuid.Nil, nil
+	}
+	return t[0].ID, nil
 }
 
 func (s *WorkflowStorage) UpdateTimeout(ctx context.Context, id uuid.UUID, timeout time.Duration) error {
