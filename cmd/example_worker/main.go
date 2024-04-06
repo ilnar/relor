@@ -42,7 +42,7 @@ func main() {
 			log.Fatalf("failed to receive: %v", err)
 		}
 
-		log.Printf("Doing %q (%s)", job.Reference.WorkflowAction, job.Reference.WorkflowId)
+		log.Printf("Doing %q (%s) tn: %q", job.Reference.WorkflowAction, job.Reference.WorkflowId, job.Reference.TransitionId)
 
 		claimResp, err := c.Claim(ctx, &pb.ClaimRequest{
 			Id: job.Id,
