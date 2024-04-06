@@ -148,12 +148,19 @@ func (s *Scheduler) schedule(ctx context.Context, w model.Workflow) error {
 		return fmt.Errorf("failed to update timeout: %w", err)
 	}
 
+	// Get the latest transition ID.
+	tid, err := s.wfStore.GetLatestTransition(ctx, w.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get latest transition: %w", err)
+	}
+
 	// Schedule the next action.
 	jcp := &pb.CreateRequest{
 		Id: uuid.NewString(),
 		Reference: &pb.Reference{
 			WorkflowId:     w.ID.String(),
 			WorkflowAction: w.CurrentNode,
+			TransitionId:   tid.String(),
 		},
 		ResultLabels: labels,
 		Ttl:          durationpb.New(timeout),
