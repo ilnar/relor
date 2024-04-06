@@ -25,15 +25,17 @@ message GetRequest {
 
 message GetResponse {
     WorkflowState state = 1;
-    string current_action = 2;
-    repeated string available_result_labels = 3;
+    string transition_id = 2;
+    repeated string available_result_labels = 4;
 }
 
 message UpdateRequest {
     string id = 1;
 
-    // Repeat current action to mitigate race conditions.
-    string current_action = 2;
+    // Repeat current transition ID to prevent concurrent updates.
+    // This is optimistic locking mechanism:
+    // if the transition ID is different from the current one, the update will be rejected.
+    string transition_id = 2;
     
     string result_label = 3;
 }
