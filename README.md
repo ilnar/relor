@@ -52,3 +52,19 @@ Example worker then can be started too:
 ./bin/example_worker
 
 ```
+
+## Overview
+
+### Key Concepts
+
+**Workflow** models a real-world process as a series of operations. It combines an execution graph, the current position in this graph and some metadata.
+
+**Operation** is the minimal meaningful building block of the workflow. Operations are expected to be atomic and idempotent. The operation usually updates the state in various systems the workflow relies upon. Operations define workflow behaviour and can be perceived as a function declaration.
+
+**Job** represents an attempt to perform an operation with given inputs. Jobs are not reusable and are short-lived. A job can be compared with a function call.
+
+**Worker** pulls jobs and performs them. Worker implements operations. Following the function example, the worker holds the definition of a function, while the operation declares that function and job triggers a call to that function.
+
+**Label** is the output of a job. Each operation is offered a set of labels to choose from. It is up to the implementation of the operation to choose a single resulting label for a given job. The resulting label will control the progression of the workflow.
+
+**Execution Graph** or Graph is a directed graph that has operations in its nodes and labels on its edges. When the operation is completed the resulting label is used to choose the next operation. The workflow is completed when there are no operations left, i.e., the execution reaches the leaf node in the graph.
