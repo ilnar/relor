@@ -60,7 +60,7 @@ generate: sqlc
 		api/*.proto
 
 sqlc:
-	pushd db && sqlc generate
+	docker run --rm -v $(shell pwd):/src -w /src/db sqlc/sqlc:1.27.0 generate
 
 .PHONY: all build test clean tidy generate \
 	initpg startpg cleanpg migrateup migratedown sqlc
