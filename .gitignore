@@ -22,3 +22,6 @@
 go.work
 
 /bin/
+
+/.idea/
+/.vscode/
