@@ -6,6 +6,9 @@ BIN_DIR = bin
 PB_DIR = gen/pb
 SQLC_DIR = gen/sqlc
 
+SQLC_VERSION = 1.27.0
+MIGRATE_VERSION = v4.18.1
+
 DB = postgres16
 
 all: clean generate tidy test build 
@@ -28,13 +31,15 @@ cleanpg:
 migrateup:
 	docker start $(DB)
 	sleep 2
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose up
+	docker run -v ./db/migration:/migration --network host migrate/migrate:${MIGRATE_VERSION} \
+		-path=/migration/ -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose up
 	docker stop $(DB)
 
 migratedown:
 	docker start $(DB)
 	sleep 2
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose down
+	docker run -v ./db/migration:/migration --network host migrate/migrate:${MIGRATE_VERSION} \
+		-path=/migration/ -database "postgresql://root:secret@localhost:5432/workflow?sslmode=disable" -verbose down
 	docker stop $(DB)
 
 test:
@@ -60,7 +65,7 @@ generate: sqlc
 		api/*.proto
 
 sqlc:
-	docker run --rm -v $(shell pwd):/src -w /src/db sqlc/sqlc:1.27.0 generate
+	docker run --rm -v .:/src -w /src/db sqlc/sqlc:${SQLC_VERSION} generate
 
 .PHONY: all build test clean tidy generate \
 	initpg startpg cleanpg migrateup migratedown sqlc
