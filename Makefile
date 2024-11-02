@@ -50,22 +50,28 @@ clean:
 	rm -rf $(BIN_DIR)
 	rm -rf $(PB_DIR)/*
 	rm -rf $(SQLC_DIR)
+	#TODO remove all docker containers
 
 tidy:
 	go mod tidy
 	go mod vendor
 	go vet ./...
 
-generate: sqlc
-	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
-		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
-		graph/*.proto
-	protoc --go_out=$(PB_DIR) --go_opt=paths=source_relative \
-		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
-		api/*.proto
+generate: sqlc proto
 
 sqlc:
 	docker run --rm -v .:/src -w /src/db sqlc/sqlc:${SQLC_VERSION} generate
 
+proto:
+	docker build -f Dockerfile.protoc -t protoc-tool .
+	docker run  --rm -v .:/src -w /src protoc-tool \
+		--go_out=$(PB_DIR) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
+		graph/*.proto
+	docker run  --rm -v .:/src -w /src protoc-tool \
+		--go_out=$(PB_DIR) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
+		api/*.proto
+
 .PHONY: all build test clean tidy generate \
-	initpg startpg cleanpg migrateup migratedown sqlc
+	initpg startpg cleanpg migrateup migratedown sqlc proto

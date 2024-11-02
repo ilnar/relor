@@ -15,15 +15,6 @@ In addition, Relentless Orchestrator consists of isolated services that can be s
 
 ## Build and Run
 
-Install build tools.
-
-```sh
-brew install go protobuf@28
-go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.1
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
-
-```
-
 ### Fast Build
 
 Fast build will not regenerate any files and use already generated go code in `gen/` folder.
@@ -36,7 +27,7 @@ make build
 
 A full build will regenerate all files in the `gen/` folder. This is needed when changes to APIs or DB Schema have been made.
 
-This will require installing `protoc` and `sqlc`. 
+This will pull and build Docker images used for code generation.
 
 ```sh
 make
