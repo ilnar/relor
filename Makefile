@@ -16,6 +16,10 @@ all: clean generate tidy test build
 build:
 	go build -o $(BIN_DIR)/ -v ./...
 
+cov:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -html=coverage.out
+
 initpg: cleanpg
 	docker run --name $(DB) -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:16-alpine
 	sleep 5
@@ -73,5 +77,5 @@ proto:
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
 
-.PHONY: all build test clean tidy generate \
+.PHONY: all build test clean cov tidy generate \
 	initpg startpg cleanpg migrateup migratedown sqlc proto
