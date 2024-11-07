@@ -26,24 +26,26 @@ type Logger interface {
 }
 
 type Scheduler struct {
-	wfStore    *storage.WorkflowStorage
-	jobClient  pb.JobServiceClient
-	logger     Logger
-	workerName string
+	wfStore        *storage.WorkflowStorage
+	jobClient      pb.JobServiceClient
+	logger         Logger
+	workerName     string
+	jobServiceAddr string
 }
 
-func New(wfStore *storage.WorkflowStorage, l Logger) *Scheduler {
+func New(wfStore *storage.WorkflowStorage, l Logger, jobSrvAddr string) *Scheduler {
 	return &Scheduler{
-		wfStore:    wfStore,
-		logger:     l,
-		workerName: "scheduler-" + uuid.NewString(),
+		wfStore:        wfStore,
+		logger:         l,
+		workerName:     "scheduler-" + uuid.NewString(),
+		jobServiceAddr: jobSrvAddr,
 	}
 }
 
 func (s *Scheduler) Run(ctx context.Context) error {
 	s.logger.InfoContext(ctx, "Starting scheduler")
 
-	conn, err := grpc.DialContext(ctx, "localhost:50051",
+	conn, err := grpc.DialContext(ctx, s.jobServiceAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)

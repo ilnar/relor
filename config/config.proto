@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package config;
+option go_package="github.com/ilnar/wf/gen/pb/config";
+
+message Address {
+    string hostname = 1;
+    int32 port = 2;
+}
+
+message Config {
+    // Unique identifier of the isntace of the service.
+    string node_id = 1;
+
+    // Port the API is exposed on.
+    int32 api_port = 2;
+
+    // Address exposing Jobs API.
+    Address job_service_addr = 3;
+}

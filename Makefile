@@ -76,6 +76,10 @@ proto:
 		--go_out=$(PB_DIR) --go_opt=paths=source_relative \
 		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
 		api/*.proto
+	docker run  --rm -v .:/src -w /src protoc-tool \
+		--go_out=$(PB_DIR) --go_opt=paths=source_relative \
+		--go-grpc_out=$(PB_DIR) --go-grpc_opt=paths=source_relative \
+		config/*.proto
 
 .PHONY: all build test clean cov tidy generate \
 	initpg startpg cleanpg migrateup migratedown sqlc proto

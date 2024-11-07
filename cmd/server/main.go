@@ -3,7 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"flag"
+	"fmt"
+	"log"
 	"log/slog"
+	"os"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/ilnar/wf/gen/sqlc"
 	"github.com/ilnar/wf/internal/job"
@@ -12,31 +19,64 @@ import (
 	"github.com/ilnar/wf/internal/storage"
 	"github.com/ilnar/wf/internal/workflow"
 
+	configpb "github.com/ilnar/wf/gen/pb/config"
+
 	_ "github.com/lib/pq"
 )
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+var config = flag.String("config", "config.json", "Path to the config file")
 
-	logger := slog.Default()
+func loadConfig(path string) (*configpb.Config, error) {
+	if path == "" {
+		return nil, errors.New("config file is required")
+	}
+
+	jsonData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %v", err)
+	}
+
+	cfg := configpb.Config{}
+	if err := protojson.Unmarshal(jsonData, &cfg); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+	}
+	return &cfg, nil
+}
+
+func main() {
+	flag.Parse()
+
+	cfg, err := loadConfig(*config)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
 	conn, err := sql.Open("postgres", "user=root dbname=workflow password=secret sslmode=disable")
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to open db connection: %v", err)
 	}
 	defer conn.Close()
 	wfStore := storage.NewWorkflowStorage(sqlc.New(), conn)
 	jobStore := storage.NewJobStorage()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger := slog.Default()
+
 	wfs := workflow.New(logger, wfStore)
+	// TODO: Job service should be a separate service.
 	js := job.New(logger, jobStore)
 
-	sch := schedule.New(wfStore, logger)
+	jaddr := cfg.GetJobServiceAddr()
+	if jaddr == nil {
+		log.Fatal("job service address is required")
+	}
+	jobServiceAddr := fmt.Sprintf("%s:%d", jaddr.GetHostname(), jaddr.GetPort())
+	sch := schedule.New(wfStore, logger, jobServiceAddr)
 	go sch.Run(ctx)
 
-	port := 50051
-	srv := server.New(port, logger, wfs, js)
+	srv := server.New(int(cfg.GetApiPort()), logger, wfs, js)
 	if err := srv.Serve(ctx); err != nil {
 		logger.ErrorContext(ctx, "Error serving", "err", err)
 	}
