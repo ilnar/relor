@@ -12,7 +12,9 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/google/uuid"
 	"github.com/ilnar/wf/gen/sqlc"
+	"github.com/ilnar/wf/internal/gossip"
 	"github.com/ilnar/wf/internal/job"
 	"github.com/ilnar/wf/internal/schedule"
 	"github.com/ilnar/wf/internal/server"
@@ -25,6 +27,7 @@ import (
 )
 
 var config = flag.String("config", "config.json", "Path to the config file")
+var gossipPort = flag.Int("gossip-port", 7946, "Port for gossip protocol")
 
 func loadConfig(path string) (*configpb.Config, error) {
 	if path == "" {
@@ -63,6 +66,22 @@ func main() {
 	defer cancel()
 
 	logger := slog.Default()
+
+	if cfg.GetCluster() != nil {
+		if *gossipPort == 0 {
+			log.Fatal("gossip port is required")
+		}
+		name := uuid.New().String()
+		seed := []string{}
+		for _, m := range cfg.GetCluster().GetGossipSeed() {
+			seed = append(seed, fmt.Sprintf("%s:%d", m.GetHostname(), m.GetPort()))
+		}
+		g, err := gossip.NewGossip(ctx, name, *gossipPort, seed, logger)
+		if err != nil {
+			log.Fatalf("failed to create gossip: %v", err)
+		}
+		logger.InfoContext(ctx, "Gossip started", "members", g.Members())
+	}
 
 	wfs := workflow.New(logger, wfStore)
 	// TODO: Job service should be a separate service.

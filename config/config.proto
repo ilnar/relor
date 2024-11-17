@@ -8,13 +8,21 @@ message Address {
     int32 port = 2;
 }
 
-message Config {
+message Cluster {
     // Unique identifier of the isntace of the service.
-    string node_id = 1;
+    string node_name = 1;
+    int32 gossip_port = 2;
+    repeated Address gossip_seed = 3;
+}
 
+message Config {
     // Port the API is exposed on.
-    int32 api_port = 2;
+    int32 api_port = 1;
 
     // Address exposing Jobs API.
-    Address job_service_addr = 3;
+    Address job_service_addr = 2;
+
+    // Specify settings for a cluster mode.
+    // If this value is not set, single node configuration is used.
+    optional Cluster cluster = 3;
 }

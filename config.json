@@ -1,7 +1,15 @@
 {
-    "api_port": 50051,
+    "api_port": 50052,
     "job_service_addr": {
         "hostname": "localhost",
-        "port": 50051
+        "port": 50052
+    },
+    "cluster": {
+        "seed": [
+            {
+                "hostname": "localhost",
+                "port": 7946
+            }
+        ]
     }
 }
