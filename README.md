@@ -35,18 +35,29 @@ make
 
 ### Local Run
 
-Local run requires `docker` and `golang-migrate`.
+Local run requires `docker`.
+
+Single-node orchestrator:
 
 ```sh 
 make startpg
-./bin/server
+./bin/server --config=dev/single-node.json
 ```
 
-Example worker then can be started too:
+Example worker pulling jobs:
 
 ```sh
 ./bin/example_worker
 
+```
+
+Multi-node cluster:
+
+```sh
+make startpg
+./bin/server --config=dev/cluster-node-1.json
+./bin/server --config=dev/cluster-node-2.json
+./bin/server --config=dev/cluster-node-3.json
 ```
 
 ## Overview
