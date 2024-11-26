@@ -3,18 +3,33 @@ syntax = "proto3";
 package config;
 option go_package="github.com/ilnar/wf/gen/pb/config";
 
+// Generic address message.
 message Address {
+    // Hostname or IP address.
     string hostname = 1;
+    // Port number.
     int32 port = 2;
 }
 
-message Config {
-    // Unique identifier of the isntace of the service.
-    string node_id = 1;
+// Node-to-node communication settings.
+message Cluster {
+    // Unique identifier of the instace of the service.
+    string node_name = 1;
+    // Port the gossip protocol is exposed on.
+    int32 gossip_port = 2;
+    // List of seed nodes to connect to. 
+    repeated Address gossip_seed = 3;
+}
 
-    // Port the API is exposed on.
-    int32 api_port = 2;
+// Orchestrator service configuration.
+message Config {
+    // Managament API port.
+    int32 api_port = 1;
 
     // Address exposing Jobs API.
-    Address job_service_addr = 3;
+    Address job_service_addr = 2;
+
+    // Specify settings for a cluster mode.
+    // If this value is not set, single node configuration is used.
+    optional Cluster cluster = 3;
 }
