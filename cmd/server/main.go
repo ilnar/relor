@@ -26,7 +26,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var config = flag.String("config", "config.json", "Path to the config file")
+var config = flag.String("config", "", "Path to the config file")
 
 func loadConfig(path string) (*configpb.Config, error) {
 	if path == "" {

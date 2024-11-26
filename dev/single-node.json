@@ -1,0 +1,7 @@
+{
+    "api_port": 50051,
+    "job_service_addr": {
+        "hostname": "localhost",
+        "port": 50051
+    }
+}
