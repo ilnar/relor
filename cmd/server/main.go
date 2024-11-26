@@ -27,7 +27,6 @@ import (
 )
 
 var config = flag.String("config", "config.json", "Path to the config file")
-var gossipPort = flag.Int("gossip-port", 7946, "Port for gossip protocol")
 
 func loadConfig(path string) (*configpb.Config, error) {
 	if path == "" {
@@ -68,15 +67,16 @@ func main() {
 	logger := slog.Default()
 
 	if cfg.GetCluster() != nil {
-		if *gossipPort == 0 {
+		if cfg.GetCluster().GetGossipPort() == 0 {
 			log.Fatal("gossip port is required")
 		}
+		gp := int(cfg.GetCluster().GetGossipPort())
 		name := uuid.New().String()
 		seed := []string{}
 		for _, m := range cfg.GetCluster().GetGossipSeed() {
 			seed = append(seed, fmt.Sprintf("%s:%d", m.GetHostname(), m.GetPort()))
 		}
-		g, err := gossip.NewGossip(ctx, name, *gossipPort, seed, logger)
+		g, err := gossip.NewGossip(ctx, name, gp, seed, logger)
 		if err != nil {
 			log.Fatalf("failed to create gossip: %v", err)
 		}
