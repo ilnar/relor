@@ -17,7 +17,7 @@ build:
 	go build -o $(BIN_DIR)/ -v ./...
 
 cov:
-	go test ./... -coverprofile=coverage.out
+	go test ./... -race -coverprofile=coverage.out -covermode=atomic
 	go tool cover -html=coverage.out
 
 initpg: cleanpg
