@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gemlab-dev/relor/internal/model"
 	"github.com/google/uuid"
-	"github.com/ilnar/wf/internal/model"
 )
 
 type JobStorage struct {

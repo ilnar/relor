@@ -12,16 +12,16 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/gemlab-dev/relor/gen/sqlc"
+	"github.com/gemlab-dev/relor/internal/gossip"
+	"github.com/gemlab-dev/relor/internal/job"
+	"github.com/gemlab-dev/relor/internal/schedule"
+	"github.com/gemlab-dev/relor/internal/server"
+	"github.com/gemlab-dev/relor/internal/storage"
+	"github.com/gemlab-dev/relor/internal/workflow"
 	"github.com/google/uuid"
-	"github.com/ilnar/wf/gen/sqlc"
-	"github.com/ilnar/wf/internal/gossip"
-	"github.com/ilnar/wf/internal/job"
-	"github.com/ilnar/wf/internal/schedule"
-	"github.com/ilnar/wf/internal/server"
-	"github.com/ilnar/wf/internal/storage"
-	"github.com/ilnar/wf/internal/workflow"
 
-	configpb "github.com/ilnar/wf/gen/pb/config"
+	configpb "github.com/gemlab-dev/relor/gen/pb/config"
 
 	_ "github.com/lib/pq"
 )

@@ -1,4 +1,4 @@
-module github.com/ilnar/wf
+module github.com/gemlab-dev/relor
 
 go 1.22.1
 

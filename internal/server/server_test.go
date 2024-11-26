@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilnar/wf/internal/job"
-	"github.com/ilnar/wf/internal/workflow"
+	"github.com/gemlab-dev/relor/internal/job"
+	"github.com/gemlab-dev/relor/internal/workflow"
 )
 
 type loggerMock struct {

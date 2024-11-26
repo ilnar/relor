@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package graph;
-option go_package="github.com/ilnar/wf/gen/pb/graph";
+option go_package="github.com/gemlab-dev/relor/gen/pb/graph";
 
 import "google/protobuf/duration.proto";
 

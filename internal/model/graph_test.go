@@ -6,9 +6,9 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	gpb "github.com/gemlab-dev/relor/gen/pb/graph"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	gpb "github.com/ilnar/wf/gen/pb/graph"
 )
 
 func TestLoadGraphFromProtoWideGraph(t *testing.T) {

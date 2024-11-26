@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"html/template"
 
-	"github.com/ilnar/wf/internal/model"
+	"github.com/gemlab-dev/relor/internal/model"
 )
 
 type edgeKey struct {

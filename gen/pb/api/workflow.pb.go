@@ -7,7 +7,7 @@
 package api
 
 import (
-	graph "github.com/ilnar/wf/gen/pb/graph"
+	graph "github.com/gemlab-dev/relor/gen/pb/graph"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"

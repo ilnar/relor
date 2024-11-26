@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package api;
-option go_package="github.com/ilnar/wf/gen/pb/api";
+option go_package="github.com/gemlab-dev/relor/gen/pb/api";
 
 import "google/protobuf/duration.proto";
 import "graph/graph.proto";
