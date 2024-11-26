@@ -1,10 +1,9 @@
-//go:build !race
-
 package server
 
 import (
 	"context"
 	"os"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -15,13 +14,18 @@ import (
 
 type loggerMock struct {
 	lastInfoMsg, lastErrMsg string
+	mu                      sync.Mutex
 }
 
 func (l *loggerMock) InfoContext(ctx context.Context, msg string, args ...any) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.lastInfoMsg = msg
 }
 
 func (l *loggerMock) ErrorContext(ctx context.Context, msg string, args ...any) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	l.lastErrMsg = msg
 }
 
@@ -35,6 +39,9 @@ func TestShutdownWithCtxCancel(t *testing.T) {
 	cancel()
 
 	time.Sleep(10 * time.Millisecond)
+
+	logger.mu.Lock()
+	defer logger.mu.Unlock()
 
 	want := "Stopping server"
 	if logger.lastInfoMsg != want {
@@ -60,6 +67,9 @@ func TestShutdownWithSignal(t *testing.T) {
 
 	time.Sleep(10 * time.Millisecond)
 
+	logger.mu.Lock()
+	defer logger.mu.Unlock()
+
 	want := "Stopping server"
 	if logger.lastInfoMsg != want {
 		t.Errorf("Unexpected log message: %q; want %q", logger.lastInfoMsg, want)
@@ -80,6 +90,9 @@ func TestShutdownWithError(t *testing.T) {
 	go srv.Serve(ctx)
 
 	time.Sleep(10 * time.Millisecond)
+
+	logger.mu.Lock()
+	defer logger.mu.Unlock()
 
 	want := "Starting server"
 	if logger.lastInfoMsg != want {
