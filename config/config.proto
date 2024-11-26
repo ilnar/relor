@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package config;
-option go_package="github.com/ilnar/wf/gen/pb/config";
+option go_package="github.com/gemlab-dev/relor/gen/pb/config";
 
 // Generic address message.
 message Address {

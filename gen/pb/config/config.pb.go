@@ -20,13 +20,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Generic address message.
 type Address struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Hostname or IP address.
 	Hostname string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	Port     int32  `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	// Port number.
+	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 }
 
 func (x *Address) Reset() {
@@ -73,14 +76,17 @@ func (x *Address) GetPort() int32 {
 	return 0
 }
 
+// Node-to-node communication settings.
 type Cluster struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier of the isntace of the service.
-	NodeName   string     `protobuf:"bytes,1,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
-	GossipPort int32      `protobuf:"varint,2,opt,name=gossip_port,json=gossipPort,proto3" json:"gossip_port,omitempty"`
+	// Unique identifier of the instace of the service.
+	NodeName string `protobuf:"bytes,1,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	// Port the gossip protocol is exposed on.
+	GossipPort int32 `protobuf:"varint,2,opt,name=gossip_port,json=gossipPort,proto3" json:"gossip_port,omitempty"`
+	// List of seed nodes to connect to.
 	GossipSeed []*Address `protobuf:"bytes,3,rep,name=gossip_seed,json=gossipSeed,proto3" json:"gossip_seed,omitempty"`
 }
 
@@ -135,12 +141,13 @@ func (x *Cluster) GetGossipSeed() []*Address {
 	return nil
 }
 
+// Orchestrator service configuration.
 type Config struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Port the API is exposed on.
+	// Managament API port.
 	ApiPort int32 `protobuf:"varint,1,opt,name=api_port,json=apiPort,proto3" json:"api_port,omitempty"`
 	// Address exposing Jobs API.
 	JobServiceAddr *Address `protobuf:"bytes,2,opt,name=job_service_addr,json=jobServiceAddr,proto3" json:"job_service_addr,omitempty"`
@@ -226,9 +233,10 @@ var file_config_config_proto_rawDesc = []byte{
 	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x43,
 	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x48, 0x00, 0x52, 0x07, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65,
 	0x72, 0x88, 0x01, 0x01, 0x42, 0x0a, 0x0a, 0x08, 0x5f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
-	0x42, 0x23, 0x5a, 0x21, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x69,
-	0x6c, 0x6e, 0x61, 0x72, 0x2f, 0x77, 0x66, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x62, 0x2f, 0x63,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x2b, 0x5a, 0x29, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67,
+	0x65, 0x6d, 0x6c, 0x61, 0x62, 0x2d, 0x64, 0x65, 0x76, 0x2f, 0x72, 0x65, 0x6c, 0x6f, 0x72, 0x2f,
+	0x67, 0x65, 0x6e, 0x2f, 0x70, 0x62, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

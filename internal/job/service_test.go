@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	pb "github.com/ilnar/wf/gen/pb/api"
-	"github.com/ilnar/wf/internal/storage"
+	pb "github.com/gemlab-dev/relor/gen/pb/api"
+	"github.com/gemlab-dev/relor/internal/storage"
 )
 
 func TestJobListen(t *testing.T) {

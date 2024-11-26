@@ -6,12 +6,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/gemlab-dev/relor/gen/sqlc"
+	"github.com/gemlab-dev/relor/internal/model"
 	"github.com/google/uuid"
-	"github.com/ilnar/wf/gen/sqlc"
-	"github.com/ilnar/wf/internal/model"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	pb "github.com/ilnar/wf/gen/pb/graph"
+	pb "github.com/gemlab-dev/relor/gen/pb/graph"
 )
 
 type fakeDBTX struct {

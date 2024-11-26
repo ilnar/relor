@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	gpb "github.com/ilnar/wf/gen/pb/graph"
+	gpb "github.com/gemlab-dev/relor/gen/pb/graph"
 )
 
 type node struct {

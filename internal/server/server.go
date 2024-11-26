@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	pb "github.com/ilnar/wf/gen/pb/api"
+	pb "github.com/gemlab-dev/relor/gen/pb/api"
 )
 
 type Logger interface {

@@ -3,11 +3,11 @@ package workflow
 import (
 	"context"
 
+	pb "github.com/gemlab-dev/relor/gen/pb/api"
+	"github.com/gemlab-dev/relor/internal/graphviz"
+	"github.com/gemlab-dev/relor/internal/model"
+	"github.com/gemlab-dev/relor/internal/storage"
 	"github.com/google/uuid"
-	pb "github.com/ilnar/wf/gen/pb/api"
-	"github.com/ilnar/wf/internal/graphviz"
-	"github.com/ilnar/wf/internal/model"
-	"github.com/ilnar/wf/internal/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"

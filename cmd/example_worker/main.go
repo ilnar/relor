@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	pb "github.com/gemlab-dev/relor/gen/pb/api"
 	"github.com/google/uuid"
-	pb "github.com/ilnar/wf/gen/pb/api"
 )
 
 func main() {
