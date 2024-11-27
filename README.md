@@ -1,4 +1,5 @@
 [![codecov](https://codecov.io/gh/gemlab-dev/relor/graph/badge.svg?token=Y6XRNVMZ1N)](https://codecov.io/gh/gemlab-dev/relor)
+[![go report](https://goreportcard.com/badge/github.com/gemlab-dev/relor)](https://goreportcard.com/report/github.com/gemlab-dev/relor)
 > ⚠️ 
 > This is a prototype and can't be used in production; feel free to contribute or subscribe
 
